@@ -14,6 +14,7 @@ this file should stay boring.
 
 import uuid
 from typing import Optional
+import anthropic
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
@@ -40,6 +41,28 @@ class ChatResponse(BaseModel):
     status: str
 
 
+def _extract_anthropic_error_message(exc: anthropic.APIStatusError) -> str:
+    """
+    Pulls the actual human-readable message out of an Anthropic API
+    error -- rate limits, usage caps, auth problems, overloaded model,
+    etc. These are genuinely useful and safe to show directly: they're
+    not internal implementation details (no stack trace, no file paths,
+    no database connection info), they're actionable information about
+    why the request didn't go through. Falls back to a plain string
+    conversion if the error body isn't shaped the way we expect, so this
+    never itself raises trying to be helpful.
+    """
+    try:
+        body = exc.body
+        if isinstance(body, dict):
+            inner = body.get("error", {})
+            if isinstance(inner, dict) and inner.get("message"):
+                return inner["message"]
+    except Exception:
+        pass
+    return str(exc)
+
+
 @router.post("/chat", response_model=ChatResponse)
 def chat(request: ChatRequest) -> ChatResponse:
     """
@@ -63,11 +86,21 @@ def chat(request: ChatRequest) -> ChatResponse:
 
     try:
         result_state = compiled_graph.invoke(state)
+    except anthropic.APIStatusError as e:
+        # A real, specific error from Claude's API (usage limits, auth
+        # issues, rate limits, an overloaded model) -- these are safe
+        # and useful to show the user directly, since they explain
+        # exactly what to do next (e.g. "you'll regain access on
+        # 2026-08-01"), unlike an internal Python exception which could
+        # contain anything.
+        raise HTTPException(status_code=502, detail=_extract_anthropic_error_message(e)) from e
     except Exception as e:
-        # A crash deep inside the graph should never surface as a raw
-        # stack trace to the user. This is the outermost safety net —
-        # everything the validators inside the graph already handle
-        # gracefully never reaches this point at all.
+        # Everything else -- a genuine bug, a ClickHouse connection
+        # error, an unexpected crash -- stays hidden behind a generic
+        # message. These CAN contain internal details (file paths,
+        # connection strings, stack traces) that shouldn't reach a user,
+        # so this is the one place we deliberately don't show the real
+        # error text. It's still fully visible in Render's logs.
         raise HTTPException(
             status_code=500,
             detail="Something went wrong while processing this question.",
