@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: ri-copilot
+    runtime: python
+    plan: starter
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: CLICKHOUSE_URL
+        sync: false
+      - key: CLICKHOUSE_TOKEN
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: DEV_ADMIN_TOKEN
+        sync: false
