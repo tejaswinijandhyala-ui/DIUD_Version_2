@@ -19,11 +19,11 @@ import re
 from datetime import datetime
 from typing import Dict, List
 
-import anthropic
+from openai import OpenAI
 
 from governance.feedback_store import get_recent_feedback
 
-client = anthropic.Anthropic()
+client = OpenAI()
 
 # Most-recent-first, capped -- in-memory by design, same reasoning as
 # memory/session_store.py and governance/feedback_store.py: this is
@@ -284,7 +284,7 @@ def draft_fix_proposal(flag: dict) -> dict:
         f"Detail: {flag['detail']}"
     )
     response = client.messages.create(
-        model="claude-sonnet-5",
+        model="gpt-5",
         system=_RULE_REVIEWER_SYSTEM_PROMPT,
         messages=[{"role": "user", "content": user_msg}],
         max_tokens=800,
