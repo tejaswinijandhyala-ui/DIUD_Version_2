@@ -112,14 +112,16 @@ Facts (the ONLY numbers you may reference):
 {retry_note}
 """
 
-    response = client.messages.create(
+    response = client.chat.completions.create(
         model="gpt-5",
         max_tokens=1500,
-        system=SYSTEM_PROMPT,
-        messages=[{"role": "user", "content": user_message}],
+        messages=[
+            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "user", "content": user_message},
+        ],
     )
 
-    text = response.content[0].text.strip()
+    text = response.choices[0].message.content.strip()
     state["analysis"] = text
     state["response"] = text
 
