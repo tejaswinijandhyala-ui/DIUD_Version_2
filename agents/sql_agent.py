@@ -13,10 +13,10 @@ already made by deterministic Python before this agent ever runs. Its
 only job is to turn "question + rules + schema" into one correct query.
 """
 
-import anthropic
+from openai import OpenAI
 from graph.state import GraphState
 
-client = anthropic.Anthropic()
+client = OpenAI()
 
 
 def _format_rules(rules: dict) -> str:
@@ -100,7 +100,7 @@ Available schema:
 """
 
     response = client.messages.create(
-        model="claude-sonnet-5",
+        model="gpt-5",
         max_tokens=1000,
         system=SYSTEM_PROMPT,
         messages=[{"role": "user", "content": user_message}],
