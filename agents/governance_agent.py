@@ -64,15 +64,17 @@ def run_governance_agent() -> list:
 
     feedback_text = json.dumps(feedback, indent=2, default=str)
 
-    response = client.messages.create(
+    response = client.chat.completions.create(
         model="gpt-5",
         max_tokens=2000,
-        system=SYSTEM_PROMPT,
-        messages=[{"role": "user", "content": f"Recent feedback:\n{feedback_text}"}],
+        messages=[
+            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "user", "content": f"Recent feedback:\n{feedback_text}"},
+        ],
     )
 
     try:
-        patterns = json.loads(response.content[0].text.strip())
+        patterns = json.loads(response.choices[0].message.content.strip())
     except (json.JSONDecodeError, ValueError):
         return []
 
