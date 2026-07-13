@@ -896,24 +896,16 @@
         <div style="position:relative;">
           <div class="model-pill" id="model-pill" onclick="toggleModelDropdown()">
             <span class="model-dot"></span>
-            <span id="model-pill-label">Sonnet</span>
+            <span id="model-pill-label">GPT-5</span>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
                  style="width:11px;height:11px;opacity:.6"><polyline points="6 9 12 15 18 9"/></svg>
           </div>
           <div class="model-dropdown" id="model-dropdown">
             <div class="model-option active" id="opt-sonnet" onclick="selectModel('sonnet')">
               <div class="model-option-name">
-                ...
-                claude-sonnet-4-6
+                gpt-5
               </div>
-              <div class="model-option-desc">Fast · Best for most queries</div>
-            </div>
-            <div class="model-option" id="opt-opus" onclick="selectModel('opus')">
-              <div class="model-option-name" style="color:#7C3AED;">
-                ...
-                claude-opus-4-6
-              </div>
-              <div class="model-option-desc">More powerful · Complex analysis</div>
+              <div class="model-option-desc">Current model for all questions</div>
             </div>
           </div>
         </div>
@@ -1094,7 +1086,7 @@
   let previewContent = null;
   let exportBusy     = false;
   let datasetRows    = 0;
-  let selectedModel  = "sonnet";
+  let selectedModel  = "gpt-5";
 
   /* ======================================================================
      MARKED CONFIG — sandboxed iframe for HTML blocks
@@ -1349,21 +1341,8 @@
   }
   function selectModel(m) {
     selectedModel = m;
-    const pill  = document.getElementById('model-pill');
     const label = document.getElementById('model-pill-label');
-    const optS  = document.getElementById('opt-sonnet');
-    const optO  = document.getElementById('opt-opus');
-    const chkS  = optS.querySelector('svg');
-    const chkO  = optO.querySelector('svg');
-    if (m === 'opus') {
-      label.textContent = 'Opus'; pill.classList.add('opus');
-      optO.classList.add('active'); optS.classList.remove('active');
-      chkO.style.opacity = '1'; chkS.style.opacity = '0';
-    } else {
-      label.textContent = 'Sonnet'; pill.classList.remove('opus');
-      optS.classList.add('active'); optO.classList.remove('active');
-      chkS.style.opacity = '1'; chkO.style.opacity = '0';
-    }
+    label.textContent = 'GPT-5';
     document.getElementById('model-dropdown').classList.remove('open');
   }
   document.addEventListener('click', function(e) {
