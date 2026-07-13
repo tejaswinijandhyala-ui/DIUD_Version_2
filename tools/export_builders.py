@@ -191,13 +191,15 @@ REQUIREMENTS:
 
 Generate the summary report now:"""
 
-    response = client.messages.create(
+    response = client.chat.completions.create(
         model="gpt-5",
-        system="You are a professional document formatter. Follow the instructions exactly. Never add content not requested.",
-        messages=[{"role": "user", "content": prompt}],
+        messages=[
+            {"role": "system", "content": "You are a professional document formatter. Follow the instructions exactly. Never add content not requested."},
+            {"role": "user", "content": prompt},
+        ],
         max_tokens=6144,
     )
-    return "\n".join(b.text for b in response.content if hasattr(b, "text") and b.text).strip()
+    return response.choices[0].message.content.strip()
 
 
 def _rows_to_markdown_table(columns: List[str], rows: List[dict]) -> str:
