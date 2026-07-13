@@ -17,11 +17,11 @@ only place a rule actually changes.
 import json
 import logging
 
-import anthropic
+from openai import OpenAI
 
 from governance.feedback_store import get_recent_feedback
 
-client = anthropic.Anthropic()
+client = OpenAI()
 logger = logging.getLogger("ri_copilot.governance")
 
 MIN_FEEDBACK_TO_ANALYZE = 3  # a single complaint isn't a pattern; a few similar ones might be
@@ -65,7 +65,7 @@ def run_governance_agent() -> list:
     feedback_text = json.dumps(feedback, indent=2, default=str)
 
     response = client.messages.create(
-        model="claude-sonnet-5",
+        model="gpt-5",
         max_tokens=2000,
         system=SYSTEM_PROMPT,
         messages=[{"role": "user", "content": f"Recent feedback:\n{feedback_text}"}],
