@@ -20,10 +20,10 @@ same reason.
 """
 
 import json
-import anthropic
+from openai import OpenAI
 from graph.state import GraphState
 
-client = anthropic.Anthropic()
+client = OpenAI()
 
 # Maps each intent to the response shape the PRD calls for. This tells
 # Claude which sections are appropriate to include — it does NOT force
@@ -113,7 +113,7 @@ Facts (the ONLY numbers you may reference):
 """
 
     response = client.messages.create(
-        model="claude-sonnet-5",
+        model="gpt-5",
         max_tokens=1500,
         system=SYSTEM_PROMPT,
         messages=[{"role": "user", "content": user_message}],
