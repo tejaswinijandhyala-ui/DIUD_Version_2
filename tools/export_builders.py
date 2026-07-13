@@ -18,7 +18,7 @@ import re
 from datetime import date
 from typing import Dict, List, Optional
 
-import anthropic
+from openai import OpenAI
 from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Alignment
 from openpyxl.utils import get_column_letter
@@ -37,7 +37,7 @@ from pptx.dml.color import RGBColor
 from pptx.enum.text import PP_ALIGN
 from pptx.util import Inches, Pt
 
-client = anthropic.Anthropic()
+client = OpenAI()
 
 
 def _safe_filename(title: str) -> str:
@@ -192,7 +192,7 @@ REQUIREMENTS:
 Generate the summary report now:"""
 
     response = client.messages.create(
-        model="claude-sonnet-5",
+        model="gpt-5",
         system="You are a professional document formatter. Follow the instructions exactly. Never add content not requested.",
         messages=[{"role": "user", "content": prompt}],
         max_tokens=6144,
