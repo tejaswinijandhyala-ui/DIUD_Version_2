@@ -12,11 +12,11 @@ rather than trying to solve your problem themselves.
 import json
 from typing import Optional, List, Dict
 from pydantic import BaseModel, Field
-import anthropic
+from openai import OpenAI
 
 from graph.state import GraphState
 
-client = anthropic.Anthropic()
+client = OpenAI()
 
 # The fixed list of question types this system knows how to handle.
 # Keeping this as an explicit list (rather than "whatever Claude feels
@@ -94,7 +94,7 @@ def run_intent_agent(state: GraphState) -> GraphState:
     )
 
     response = client.messages.create(
-        model="claude-sonnet-5",
+        model="gpt-5",
         max_tokens=500,
         system=SYSTEM_PROMPT,
         messages=[{"role": "user", "content": user_message}],
