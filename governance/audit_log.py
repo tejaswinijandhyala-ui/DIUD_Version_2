@@ -283,13 +283,15 @@ def draft_fix_proposal(flag: dict) -> dict:
         f"FLAGGED ISSUE:\nSource: {flag['source']}\nSubject: {flag['subject']}\n"
         f"Detail: {flag['detail']}"
     )
-    response = client.messages.create(
+    response = client.chat.completions.create(
         model="gpt-5",
-        system=_RULE_REVIEWER_SYSTEM_PROMPT,
-        messages=[{"role": "user", "content": user_msg}],
+        messages=[
+            {"role": "system", "content": _RULE_REVIEWER_SYSTEM_PROMPT},
+            {"role": "user", "content": user_msg},
+        ],
         max_tokens=800,
     )
-    text = "\n".join(b.text for b in response.content if hasattr(b, "text") and b.text)
+    text = response.choices[0].message.content
 
     diagnosis_m = re.search(r"DIAGNOSIS:\s*(.*?)(?=\nPROPOSED_ADDITION:)", text, re.S)
     addition_m = re.search(r"PROPOSED_ADDITION:\s*(.*)", text, re.S)
