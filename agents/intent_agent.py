@@ -93,14 +93,16 @@ def run_intent_agent(state: GraphState) -> GraphState:
         f"Current question: {state['question']}"
     )
 
-    response = client.messages.create(
+    response = client.chat.completions.create(
         model="gpt-5",
         max_tokens=500,
-        system=SYSTEM_PROMPT,
-        messages=[{"role": "user", "content": user_message}],
+        messages=[
+            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "user", "content": user_message},
+        ],
     )
 
-    raw_text = response.content[0].text.strip()
+    raw_text = response.choices[0].message.content.strip()
 
     try:
         parsed = IntentOutput.model_validate(json.loads(raw_text))
