@@ -99,14 +99,16 @@ Available schema:
 {retry_context}
 """
 
-    response = client.messages.create(
+    response = client.chat.completions.create(
         model="gpt-5",
         max_tokens=1000,
-        system=SYSTEM_PROMPT,
-        messages=[{"role": "user", "content": user_message}],
+        messages=[
+            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "user", "content": user_message},
+        ],
     )
 
-    sql_text = response.content[0].text.strip()
+    sql_text = response.choices[0].message.content.strip()
 
     # Defensive cleanup in case Claude wraps the SQL in markdown fences
     # despite being told not to — better to strip it than fail validation
