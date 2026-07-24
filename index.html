@@ -1,0 +1,2240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Decision Intelligence Using Data (DIUD)</title>
+  <link rel="icon" type="image/png" href="logo.png">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --navy:         #0D1B3E;
+      --navy-dark:    #080F22;
+      --blue:         #1565C0;
+      --blue-lt:      #E8F0FE;
+      --accent:       #1E88E5;
+      --green:        #2E7D32;
+      --red:          #B71C1C;
+      --amber:        #F59E0B;
+      --white:        #FFFFFF;
+      --bg:           #F4F6FA;
+      --card:         #FFFFFF;
+      --border:       #E2E8F0;
+      --txt-main:     #1E293B;
+      --txt-mid:      #475569;
+      --txt-dim:      #94A3B8;
+      --radius:       12px;
+      --shadow:       0 2px 16px rgba(13,27,62,.08);
+      --sidebar-w:    260px;
+      --panel-w:      480px;
+      --panel-trans:  all 0.38s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--txt-main);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* ── Login Overlay ────────────────────────────────────────────────────── */
+    #login-overlay {
+      position: fixed; inset: 0; z-index: 9999;
+      background: linear-gradient(135deg, var(--navy-dark) 0%, var(--navy) 60%, #1a3a6e 100%);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .login-card {
+      background: rgba(255,255,255,.97);
+      border-radius: 20px;
+      padding: 48px 44px;
+      width: 380px;
+      box-shadow: 0 32px 80px rgba(0,0,0,.45);
+      display: flex; flex-direction: column; align-items: center; gap: 24px;
+    }
+    .login-logo { width: 72px; height: 72px; object-fit: contain; border-radius: 14px; }
+    .login-card h1 {
+      font-size: 20px; font-weight: 700; color: var(--navy);
+      text-align: center; line-height: 1.3;
+    }
+    .login-card h1 span { color: var(--accent); }
+    .login-fields { display: flex; flex-direction: column; gap: 14px; width: 100%; }
+    .login-field { display: flex; flex-direction: column; gap: 6px; }
+    .login-field label { font-size: 12px; font-weight: 600; color: var(--txt-mid); letter-spacing: .3px; }
+    .login-field input {
+      padding: 11px 14px; border-radius: 9px;
+      border: 1.5px solid var(--border); background: var(--bg);
+      font-family: inherit; font-size: 13.5px; color: var(--txt-main);
+      transition: border-color .15s; outline: none;
+    }
+    .login-field input:focus { border-color: var(--accent); background: white; }
+    .login-error { color: var(--red); font-size: 12px; min-height: 16px; text-align: center; }
+    .login-btn {
+      width: 100%; padding: 13px;
+      background: linear-gradient(135deg, #1565C0, #1E88E5);
+      color: white; border: none; border-radius: 10px;
+      font-size: 15px; font-weight: 700; cursor: pointer;
+      font-family: inherit; transition: opacity .15s;
+      box-shadow: 0 4px 20px rgba(30,136,229,.35);
+    }
+    .login-btn:hover { opacity: .88; }
+    .login-footer { font-size: 11px; color: #37474F; text-align: center; }
+
+    /* ── Topbar ─────────────────────────────────────────────────────────── */
+    .topbar {
+      background: var(--navy);
+      color: var(--white);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 24px; height: 56px; flex-shrink: 0;
+      box-shadow: 0 2px 8px rgba(0,0,0,.3);
+      z-index: 100;
+    }
+    .topbar-brand { display: flex; align-items: center; gap: 10px; }
+    .topbar-logo-box {
+      width: 48px; height: 48px; display: flex; align-items: center;
+      justify-content: center; border-radius: 10px; overflow: hidden;
+      background: transparent; flex-shrink: 0; padding: 3px;
+    }
+    .topbar-logo-img { height: 44px; width: auto; border-radius: 6px; object-fit: contain; }
+    .topbar-title { font-size: 15px; font-weight: 600; letter-spacing: -.2px; }
+    .topbar-sub   { font-size: 11px; color: #90A4AE; margin-top: 1px; }
+    .topbar-actions { display: flex; gap: 8px; align-items: center; }
+
+    .new-chat-btn {
+      background: rgba(255,255,255,.1); color: white;
+      border: 1px solid rgba(255,255,255,.2);
+      padding: 7px 14px; border-radius: 8px;
+      font-size: 12px; font-weight: 500; cursor: pointer;
+      transition: background .15s; font-family: inherit;
+    }
+    .new-chat-btn:hover { background: rgba(255,255,255,.18); }
+
+    .debug-link {
+      color: #90A4AE; font-size: 11px; text-decoration: none;
+      padding: 4px 8px; border-radius: 6px; border: 1px solid rgba(255,255,255,.12);
+      transition: all .15s;
+    }
+    .debug-link:hover { color: white; border-color: rgba(255,255,255,.3); }
+
+    /* ── Body layout ─────────────────────────────────────────────────────── */
+    .body-wrap { flex: 1; display: flex; overflow: hidden; }
+
+    /* ── Sidebar ─────────────────────────────────────────────────────────── */
+    .sidebar {
+      width: var(--sidebar-w);
+      background: var(--navy-dark);
+      color: white;
+      display: flex; flex-direction: column;
+      flex-shrink: 0; overflow-y: auto;
+      padding: 16px 12px; gap: 6px;
+    }
+    .sidebar-label {
+      font-size: 10px; font-weight: 600; letter-spacing: .8px;
+      text-transform: uppercase; color: #546E7A;
+      padding: 6px 8px 4px;
+    }
+    .suggestion-chip {
+      padding: 9px 12px; border-radius: 8px;
+      border: 1px solid rgba(255,255,255,.07);
+      background: rgba(255,255,255,.04);
+      color: #B0BEC5; font-size: 11.5px; line-height: 1.45;
+      cursor: pointer; transition: all .15s; text-align: left;
+    }
+    .suggestion-chip:hover {
+      background: rgba(30,136,229,.18);
+      border-color: rgba(30,136,229,.35); color: white;
+    }
+    .sidebar-divider { border: none; border-top: 1px solid rgba(255,255,255,.06); margin: 6px 0; }
+
+    .conn-badge {
+      display: flex; align-items: center; gap: 6px;
+      padding: 8px 12px; border-radius: 8px; font-size: 11px;
+      border: 1px solid rgba(255,255,255,.08);
+      margin-top: auto; cursor: pointer;
+    }
+    .conn-badge .dot {
+      width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+      background: var(--txt-dim);
+    }
+    .conn-badge.ok   .dot { background: #4CAF50; }
+    .conn-badge.fail .dot { background: var(--red); }
+    .conn-badge.checking .dot {
+      background: var(--amber);
+      animation: pulse .8s infinite alternate;
+    }
+    @keyframes pulse { to { opacity: .3; } }
+
+    /* ── Chat pane ───────────────────────────────────────────────────────── */
+    .chat-pane {
+      flex: 1; display: flex; flex-direction: column; overflow: hidden;
+      transition: var(--panel-trans);
+    }
+    .messages {
+      flex: 1; overflow-y: auto;
+      padding: 24px 28px; display: flex;
+      flex-direction: column; gap: 20px;
+      scroll-behavior: smooth;
+    }
+    .messages::-webkit-scrollbar { width: 5px; }
+    .messages::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+    /* ── Welcome screen ──────────────────────────────────────────────────── */
+    #welcome {
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      height: 100%; gap: 18px; text-align: center;
+    }
+    .welcome-icon {
+      width: 64px; height: 64px;
+      background: linear-gradient(135deg, var(--navy), var(--accent));
+      border-radius: 16px;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: var(--shadow);
+    }
+    .welcome-icon svg { width: 32px; height: 32px; color: white; }
+    #welcome h2 { font-size: 22px; font-weight: 700; color: var(--navy); }
+    #welcome p  { font-size: 13.5px; color: var(--txt-mid); max-width: 420px; line-height: 1.6; }
+
+    /* ── Message bubbles ─────────────────────────────────────────────────── */
+    .msg { display: flex; gap: 12px; max-width: 900px; width: 100%; }
+    .msg.user      { flex-direction: row-reverse; align-self: flex-end; }
+    .msg.assistant { align-self: flex-start; }
+    .msg-avatar {
+      width: 34px; height: 34px; border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; font-weight: 700; flex-shrink: 0;
+    }
+    .msg.user .msg-avatar { background: var(--navy); color: white; }
+    .msg.assistant .msg-avatar {
+      background: var(--navy-dark); padding: 6px; overflow: hidden;
+    }
+    .msg.assistant .msg-avatar img { width: 100%; height: 100%; object-fit: contain; border-radius: 8px; }
+    .msg-body { display: flex; flex-direction: column; gap: 4px; max-width: calc(100% - 46px); }
+    .msg.user .msg-body { align-items: flex-end; }
+    .msg-bubble {
+      padding: 12px 16px; border-radius: var(--radius);
+      font-size: 13.5px; line-height: 1.6;
+      box-shadow: 0 1px 4px rgba(0,0,0,.06);
+    }
+    .msg.user .msg-bubble {
+      background: var(--navy); color: white;
+      border-radius: var(--radius) 4px var(--radius) var(--radius);
+    }
+    .msg.assistant .msg-bubble {
+      background: var(--card); color: var(--txt-main);
+      border: 1px solid var(--border);
+      border-radius: 4px var(--radius) var(--radius) var(--radius);
+    }
+    .msg-time { font-size: 10.5px; color: var(--txt-dim); padding: 0 4px; }
+
+    /* ── Error bubble + Retry button ────────────────────────────────────── */
+    .msg-error-wrap { display: flex; flex-direction: column; gap: 8px; }
+    .msg-error-bubble {
+      padding: 12px 16px; border-radius: var(--radius);
+      font-size: 13.5px; line-height: 1.6;
+      background: #FFF5F5; color: #7B1A1A;
+      border: 1px solid #FECACA;
+      border-radius: 4px var(--radius) var(--radius) var(--radius);
+      box-shadow: 0 1px 4px rgba(0,0,0,.06);
+    }
+    .msg-retry-btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 6px 14px; border-radius: 8px;
+      border: 1.5px solid var(--accent);
+      background: white; color: var(--accent);
+      font-size: 12px; font-weight: 600; cursor: pointer;
+      font-family: inherit; transition: all .15s;
+      align-self: flex-start;
+    }
+    .msg-retry-btn:hover:not(:disabled) { background: var(--blue-lt); }
+    .msg-retry-btn:disabled { opacity: .5; cursor: not-allowed; }
+    .msg-retry-btn svg { width: 13px; height: 13px; }
+    .msg-retry-btn.retrying { color: var(--accent); border-color: var(--accent); animation: pulse-btn .8s infinite alternate; }
+    @keyframes pulse-btn { to { opacity: .4; } }
+
+    /* ── Copy button beneath assistant bubbles ──────────────────────────── */
+    .msg-actions {
+      display: flex; align-items: center; gap: 4px;
+      opacity: 0; transition: opacity .2s;
+      padding: 2px 2px 0;
+    }
+    .msg.assistant:hover .msg-actions,
+    .msg-actions:focus-within { opacity: 1; }
+    @media (hover: none) { .msg-actions { opacity: 1; } }
+    .msg-copy-btn {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 4px 9px; border-radius: 6px;
+      border: 1px solid var(--border);
+      background: var(--card); color: var(--txt-dim);
+      font-size: 11.5px; font-weight: 500; cursor: pointer;
+      font-family: inherit; transition: all .15s; line-height: 1;
+    }
+    .msg-copy-btn:hover { background: var(--blue-lt); color: var(--accent); border-color: var(--accent); }
+    .msg-copy-btn.copied { color: #16a34a; border-color: #bbf7d0; background: #f0fdf4; }
+    .msg-copy-btn svg { width: 12px; height: 12px; flex-shrink: 0; }
+
+    /* ── Feedback buttons (thumbs up/down) ───────────────────────────────── */
+    .msg-feedback-btn {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 26px; height: 26px; border-radius: 6px;
+      border: 1px solid var(--border);
+      background: var(--card); color: var(--txt-dim);
+      cursor: pointer; transition: all .15s;
+    }
+    .msg-feedback-btn svg { width: 13px; height: 13px; pointer-events: none; }
+    .msg-feedback-btn:hover:not(:disabled) { background: var(--blue-lt); color: var(--accent); border-color: var(--accent); }
+    .msg-feedback-btn.selected.up { color: #16a34a; border-color: #bbf7d0; background: #f0fdf4; }
+    .msg-feedback-btn.selected.down { color: #dc2626; border-color: #fecaca; background: #fef2f2; }
+    .msg-feedback-btn:disabled { cursor: default; opacity: .55; }
+    .msg-feedback-thanks { font-size: 11px; color: var(--txt-dim); padding: 0 2px; }
+
+    /* ── Negative-feedback detail modal ──────────────────────────────────── */
+    #feedback-modal-overlay {
+      position: fixed; inset: 0; z-index: 10000;
+      background: rgba(15, 23, 42, .55);
+      display: none; align-items: center; justify-content: center;
+    }
+    #feedback-modal-overlay.open { display: flex; }
+    .feedback-modal-card {
+      background: white; border-radius: 16px; padding: 28px 28px 22px;
+      width: 420px; max-width: calc(100vw - 32px);
+      box-shadow: 0 24px 64px rgba(0,0,0,.35);
+      display: flex; flex-direction: column; gap: 14px;
+    }
+    .feedback-modal-card h3 { font-size: 17px; font-weight: 700; color: var(--txt-main); margin: 0; }
+    .feedback-modal-field { display: flex; flex-direction: column; gap: 6px; }
+    .feedback-modal-field label { font-size: 12.5px; font-weight: 600; color: var(--txt-main); }
+    .feedback-modal-textarea {
+      padding: 9px 11px; border-radius: 8px; border: 1.5px solid var(--border);
+      font-family: inherit; font-size: 12.5px; color: var(--txt-main);
+      background: var(--bg); outline: none; resize: vertical; min-height: 70px;
+    }
+    .feedback-modal-textarea:focus { border-color: var(--accent); background: white; }
+    .feedback-modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 4px; }
+    .feedback-modal-cancel-btn, .feedback-modal-submit-btn {
+      padding: 8px 16px; border-radius: 8px; font-size: 12.5px; font-weight: 600;
+      cursor: pointer; font-family: inherit; border: 1.5px solid transparent;
+    }
+    .feedback-modal-cancel-btn { background: white; border-color: var(--border); color: var(--txt-main); }
+    .feedback-modal-cancel-btn:hover { background: var(--bg); }
+    .feedback-modal-submit-btn { background: var(--navy); color: white; }
+    .feedback-modal-submit-btn:hover { opacity: .9; }
+
+    /* ── Markdown inside assistant bubbles ──────────────────────────────── */
+    .chat-md { overflow-x: auto; }
+    .chat-md p  { margin-bottom: 8px; }
+    .chat-md p:last-child { margin-bottom: 0; }
+    .chat-md h2 { font-size: 14px; font-weight: 700; color: var(--navy);
+                  margin: 14px 0 6px; border-bottom: 2px solid var(--blue-lt); padding-bottom: 4px; }
+    .chat-md h3 { font-size: 13px; font-weight: 600; color: var(--blue); margin: 10px 0 4px; }
+    .chat-md ul { padding-left: 18px; margin-bottom: 8px; }
+    .chat-md li { margin-bottom: 4px; }
+    .chat-md strong { font-weight: 600; }
+    .chat-md code {
+      background: #F1F5F9; padding: 2px 5px; border-radius: 4px;
+      font-family: 'JetBrains Mono', 'Fira Code', monospace; font-size: 12px; color: #0D1B3E;
+    }
+    .chat-md pre {
+      background: #0D1B3E; color: #E2E8F0; padding: 14px;
+      border-radius: 8px; overflow-x: auto; margin: 10px 0;
+      font-size: 12px; line-height: 1.6;
+    }
+    .chat-md pre code { background: none; color: inherit; padding: 0; }
+    .chat-md table { border-collapse: collapse; font-size: 12px; margin: 10px 0; width: 100%; min-width: 360px; }
+    .chat-md th { background: var(--navy); color: white; padding: 8px 12px; text-align: left; font-weight: 600; }
+    .chat-md td { padding: 7px 12px; border-bottom: 1px solid var(--border); }
+    .chat-md tr:nth-child(even) td { background: #F8FAFC; }
+
+    /* ── Inline Visual (HTML from Claude) — sandboxed iframe ───────────── */
+    .inline-visual-wrap {
+      margin: 14px 0;
+      border-radius: 14px;
+      overflow: hidden;
+      box-shadow: 0 4px 24px rgba(13,27,62,.13);
+      border: 1px solid rgba(13,27,62,.08);
+      background: #0D1B3E; /* dark fallback while loading */
+      position: relative;
+    }
+    .inline-visual-wrap iframe {
+      display: block;
+      width: 100%;
+      border: none;
+      border-radius: 14px;
+      min-height: 120px;
+      transition: height .3s ease;
+      background: transparent;
+    }
+    /* Small label badge */
+    .inline-visual-badge {
+      position: absolute;
+      top: 8px; right: 10px;
+      background: rgba(255,255,255,.12);
+      backdrop-filter: blur(4px);
+      border: 1px solid rgba(255,255,255,.2);
+      border-radius: 6px;
+      padding: 2px 8px;
+      font-size: 10px;
+      font-weight: 600;
+      color: rgba(255,255,255,.7);
+      letter-spacing: .5px;
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    /* ── Visualization Renderer ──────────────────────────────────────── */
+    .viz-wrap {
+      margin: 14px 0; border-radius: 14px; overflow: hidden;
+      border: 1px solid var(--border); background: var(--card);
+      box-shadow: 0 2px 12px rgba(13,27,62,.06);
+    }
+    .viz-header { padding: 12px 16px 4px; }
+    .viz-title { font-size: 13px; font-weight: 700; color: var(--navy); }
+    .viz-subtitle { font-size: 11px; color: var(--txt-dim); margin-top: 2px; }
+    .viz-body { padding: 8px 16px 16px; }
+
+    .viz-canvas-wrap { position: relative; height: 260px; }
+
+    /* KPI card */
+    .viz-kpi { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px 16px; gap: 4px; }
+    .viz-kpi-value { font-size: 32px; font-weight: 800; color: var(--navy); line-height: 1.1; }
+    .viz-kpi-label { font-size: 11.5px; color: var(--txt-mid); text-transform: uppercase; letter-spacing: .4px; }
+
+    /* Data table */
+    .viz-table-wrap { overflow-x: auto; }
+    .viz-table { border-collapse: collapse; font-size: 12px; width: 100%; min-width: 320px; }
+    .viz-table th { background: var(--navy); color: white; padding: 7px 10px; text-align: left; font-weight: 600; position: sticky; top: 0; }
+    .viz-table td { padding: 6px 10px; border-bottom: 1px solid var(--border); }
+    .viz-table tr:nth-child(even) td { background: #F8FAFC; }
+
+    /* Funnel */
+    .viz-funnel { display: flex; flex-direction: column; gap: 6px; }
+    .viz-funnel-row { display: flex; align-items: center; gap: 10px; }
+    .viz-funnel-label { width: 140px; font-size: 11.5px; color: var(--txt-mid); flex-shrink: 0; text-align: right; }
+    .viz-funnel-bar-track { flex: 1; background: var(--bg); border-radius: 6px; overflow: hidden; height: 26px; }
+    .viz-funnel-bar-fill {
+      height: 100%; background: linear-gradient(90deg, var(--blue), var(--accent));
+      display: flex; align-items: center; justify-content: flex-end; padding-right: 8px;
+      border-radius: 6px; min-width: 32px; transition: width .4s ease;
+    }
+    .viz-funnel-value { color: white; font-size: 11.5px; font-weight: 700; }
+
+    .viz-empty { padding: 16px; font-size: 12px; color: var(--txt-dim); text-align: center; }
+
+
+    .typing-indicator { display: flex; gap: 5px; padding: 12px 16px; align-items: center; }
+    .typing-dot {
+      width: 7px; height: 7px; border-radius: 50%; background: var(--txt-dim);
+      animation: bounce .9s infinite;
+    }
+    .typing-dot:nth-child(2) { animation-delay: .15s; }
+    .typing-dot:nth-child(3) { animation-delay: .3s; }
+    @keyframes bounce { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+
+    /* ── Input area ──────────────────────────────────────────────────────── */
+    .input-area {
+      padding: 16px 28px 20px; background: var(--bg);
+      border-top: 1px solid var(--border);
+      display: flex; flex-direction: column; gap: 10px; flex-shrink: 0;
+    }
+    .input-row { display: flex; gap: 10px; align-items: flex-end; }
+    #chat-input {
+      flex: 1; padding: 12px 16px; border-radius: var(--radius);
+      border: 1.5px solid var(--border); background: var(--card);
+      font-family: inherit; font-size: 13.5px; color: var(--txt-main);
+      resize: none; max-height: 140px; min-height: 48px;
+      transition: border-color .15s; outline: none; line-height: 1.5;
+    }
+    #chat-input:focus { border-color: var(--accent); }
+    #send-btn {
+      width: 48px; height: 48px; border-radius: 12px; flex-shrink: 0;
+      background: linear-gradient(135deg, #1565C0, #1E88E5);
+      color: white; border: none; cursor: pointer;
+      font-size: 15px; font-weight: 700; font-family: inherit;
+      transition: opacity .15s; box-shadow: 0 4px 20px rgba(30,136,229,.35);
+      display: flex; align-items: center; justify-content: center;
+    }
+    #send-btn:hover:not(:disabled) { opacity: .88; }
+    #send-btn:disabled { opacity: .4; cursor: not-allowed; }
+    #send-btn svg { width: 18px; height: 18px; }
+    .input-hint { font-size: 11px; color: var(--txt-dim); }
+
+    /* ── Model pill ──────────────────────────────────────────────────────── */
+    .model-pill {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 4px 10px 4px 8px; border-radius: 20px;
+      border: 1.5px solid var(--border); background: var(--card);
+      cursor: pointer; transition: all .15s; position: relative;
+      font-size: 12px; font-weight: 500; color: var(--txt-mid);
+      user-select: none;
+    }
+    .model-pill:hover { border-color: var(--accent); color: var(--accent); background: var(--blue-lt); }
+    .model-pill .model-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; background: var(--accent); }
+    .model-pill.opus .model-dot { background: #7C3AED; }
+    .model-pill.opus { color: #7C3AED; border-color: #DDD6FE; }
+    .model-pill.opus:hover { background: #F5F3FF; border-color: #7C3AED; }
+
+    .model-dropdown {
+      position: absolute; bottom: calc(100% + 8px); left: 0;
+      background: var(--card); border: 1.5px solid var(--border);
+      border-radius: 10px; box-shadow: 0 8px 32px rgba(0,0,0,.12);
+      padding: 6px; min-width: 220px; z-index: 500;
+      display: none;
+    }
+    .model-dropdown.open { display: block; }
+    .model-option {
+      display: flex; flex-direction: column; gap: 2px;
+      padding: 9px 12px; border-radius: 7px; cursor: pointer; transition: background .12s;
+    }
+    .model-option:hover { background: var(--bg); }
+    .model-option.active { background: var(--blue-lt); }
+    .model-option-name { font-size: 12.5px; font-weight: 600; color: var(--txt-main); display: flex; align-items: center; gap: 6px; }
+    .model-option-desc { font-size: 11px; color: var(--txt-dim); }
+
+    /* ── Toast ───────────────────────────────────────────────────────────── */
+    #toast {
+      position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(20px);
+      background: var(--navy); color: white; padding: 10px 20px;
+      border-radius: 10px; font-size: 13px; font-weight: 500;
+      opacity: 0; transition: all .25s; pointer-events: none; z-index: 9000;
+      box-shadow: 0 4px 20px rgba(0,0,0,.25);
+    }
+    #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    #toast.success { background: var(--green); }
+    #toast.error   { background: var(--red); }
+
+    /* ================================================================
+       EXPORT SIDE PANEL
+       ================================================================ */
+    .export-panel {
+      width: 0; min-width: 0;
+      background: var(--white);
+      border-left: 1px solid var(--border);
+      display: flex; flex-direction: column;
+      overflow: hidden;
+      transition: var(--panel-trans);
+      flex-shrink: 0; position: relative;
+      box-shadow: -4px 0 24px rgba(13,27,62,.07);
+    }
+    .export-panel.open { width: var(--panel-w); min-width: var(--panel-w); }
+
+    /* ── Admin Panel (debug reports UI, replaces raw API browsing) ───────── */
+    .admin-panel {
+      width: 0; min-width: 0;
+      background: var(--white);
+      border-left: 1px solid var(--border);
+      display: flex; flex-direction: column;
+      overflow: hidden;
+      transition: var(--panel-trans);
+      flex-shrink: 0; position: relative;
+      box-shadow: -4px 0 24px rgba(13,27,62,.07);
+    }
+    .admin-panel.open { width: var(--panel-w); min-width: var(--panel-w); }
+    .admin-header {
+      padding: 18px 20px 14px; border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      flex-shrink: 0; background: var(--white);
+    }
+    .admin-title { font-size: 14px; font-weight: 700; color: var(--navy); }
+    .admin-body { flex: 1; overflow-y: auto; padding: 16px 20px; }
+
+    .admin-token-gate { display: flex; flex-direction: column; gap: 10px; padding-top: 40px; }
+    .admin-token-gate p { font-size: 12px; color: var(--txt-dim); margin: 0 0 4px; }
+
+    .admin-tabs { display: flex; gap: 6px; padding: 0 20px 12px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+    .admin-tab {
+      padding: 6px 12px; border-radius: 7px; border: 1px solid transparent;
+      background: transparent; font-size: 12px; font-weight: 600; color: var(--txt-dim);
+      cursor: pointer; font-family: inherit;
+    }
+    .admin-tab.active { background: var(--blue-lt); color: var(--accent); border-color: var(--accent); }
+    .admin-tab:hover:not(.active) { background: var(--bg); }
+
+    .admin-card {
+      border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px;
+      margin-bottom: 10px; border-left-width: 4px;
+    }
+    .admin-card.sev-critical { border-left-color: #dc2626; }
+    .admin-card.sev-high { border-left-color: #f97316; }
+    .admin-card.sev-medium { border-left-color: #eab308; }
+    .admin-card.sev-none { border-left-color: var(--border); }
+    .admin-card-title { font-size: 12.5px; font-weight: 700; color: var(--txt-main); margin-bottom: 4px; }
+    .admin-card-detail { font-size: 12px; color: var(--txt-main); line-height: 1.5; margin-bottom: 6px; }
+    .admin-card-meta { font-size: 10.5px; color: var(--txt-dim); text-transform: uppercase; letter-spacing: .4px; margin-bottom: 6px; }
+    .admin-card-actions { display: flex; gap: 6px; margin-top: 8px; }
+    .admin-btn {
+      padding: 6px 12px; border-radius: 7px; font-size: 11.5px; font-weight: 600;
+      cursor: pointer; font-family: inherit; border: 1.5px solid transparent;
+    }
+    .admin-btn-approve { background: #f0fdf4; color: #16a34a; border-color: #bbf7d0; }
+    .admin-btn-approve:hover { background: #16a34a; color: white; }
+    .admin-btn-reject { background: #fef2f2; color: #dc2626; border-color: #fecaca; }
+    .admin-btn-reject:hover { background: #dc2626; color: white; }
+    .admin-btn-secondary { background: var(--bg); color: var(--txt-main); border-color: var(--border); width: 100%; margin-bottom: 12px; }
+    .admin-btn-secondary:hover { background: var(--blue-lt); border-color: var(--accent); color: var(--accent); }
+    .admin-btn:disabled { opacity: .5; cursor: default; }
+
+    .admin-stat-row { display: flex; gap: 10px; margin-bottom: 14px; }
+    .admin-stat { flex: 1; text-align: center; padding: 10px; border-radius: 9px; background: var(--bg); }
+    .admin-stat-num { font-size: 19px; font-weight: 700; color: var(--navy); }
+    .admin-stat-label { font-size: 10px; color: var(--txt-dim); text-transform: uppercase; letter-spacing: .4px; margin-top: 2px; }
+    .admin-empty { font-size: 12px; color: var(--txt-dim); text-align: center; padding: 30px 10px; }
+    .admin-loading { font-size: 12px; color: var(--txt-dim); text-align: center; padding: 30px 10px; }
+
+    .ep-header {
+      padding: 18px 20px 14px;
+      border-bottom: 1px solid var(--border);
+      display: flex; flex-direction: column; gap: 14px;
+      flex-shrink: 0; background: var(--white);
+    }
+    .ep-header-row { display: flex; align-items: center; justify-content: space-between; }
+    .ep-title {
+      font-size: 14px; font-weight: 700; color: var(--navy);
+      display: flex; align-items: center; gap: 8px;
+    }
+    .ep-title svg { width: 16px; height: 16px; color: var(--accent); }
+    .ep-close {
+      width: 28px; height: 28px; border-radius: 7px; border: 1px solid var(--border);
+      background: transparent; cursor: pointer; display: flex; align-items: center;
+      justify-content: center; transition: all .15s; color: var(--txt-dim);
+    }
+    .ep-close:hover { background: var(--bg); color: var(--txt-main); }
+    .ep-close svg { width: 14px; height: 14px; }
+
+    .ep-config { display: flex; flex-direction: column; gap: 10px; }
+    .ep-config-row { display: flex; gap: 8px; align-items: center; }
+    .ep-input-group { display: flex; flex-direction: column; gap: 4px; flex: 1; }
+    .ep-label { font-size: 10px; font-weight: 600; color: var(--txt-dim); text-transform: uppercase; letter-spacing: .5px; }
+    .ep-input {
+      padding: 7px 10px; border-radius: 7px; border: 1.5px solid var(--border);
+      font-family: inherit; font-size: 12.5px; color: var(--txt-main);
+      background: var(--bg); outline: none; transition: border-color .15s; width: 100%;
+    }
+    .ep-input:focus { border-color: var(--accent); background: white; }
+    .ep-select {
+      padding: 7px 10px; border-radius: 7px; border: 1.5px solid var(--border);
+      font-family: inherit; font-size: 12.5px; color: var(--txt-main);
+      background: var(--bg); outline: none; cursor: pointer;
+      transition: border-color .15s; appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%2394A3B8'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 8px center; padding-right: 26px;
+    }
+    .ep-select:focus { border-color: var(--accent); background-color: white; }
+
+    .ep-generate-btn {
+      padding: 9px 18px; border-radius: 9px; border: none;
+      background: linear-gradient(135deg, #1565C0, #1E88E5);
+      color: white; font-size: 12.5px; font-weight: 600;
+      cursor: pointer; font-family: inherit; transition: opacity .15s;
+      display: flex; align-items: center; gap: 7px; justify-content: center;
+      box-shadow: 0 3px 12px rgba(30,136,229,.3); white-space: nowrap;
+    }
+    .ep-generate-btn:hover:not(:disabled) { opacity: .88; }
+    .ep-generate-btn:disabled { opacity: .45; cursor: not-allowed; }
+    .ep-generate-btn svg { width: 14px; height: 14px; }
+
+    .ep-body { flex: 1; overflow-y: auto; position: relative; }
+    .ep-body::-webkit-scrollbar { width: 4px; }
+    .ep-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+    .ep-loading {
+      display: none; flex-direction: column; align-items: center;
+      justify-content: center; height: 100%; gap: 20px; padding: 40px;
+    }
+    .ep-loading.visible { display: flex; }
+    .ep-spinner {
+      width: 44px; height: 44px; border: 3px solid var(--border);
+      border-top-color: var(--accent); border-radius: 50%;
+      animation: spin .8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .ep-loading-text { font-size: 13px; color: var(--txt-mid); text-align: center; line-height: 1.6; }
+    .ep-loading-step {
+      font-size: 11px; color: var(--txt-dim); display: flex; align-items: center;
+      gap: 6px; animation: fadeInUp .4s ease;
+    }
+    .ep-loading-step svg { width: 12px; height: 12px; }
+    @keyframes fadeInUp { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+    .ep-empty {
+      display: flex; flex-direction: column; align-items: center;
+      justify-content: center; height: 100%; gap: 14px; padding: 40px; text-align: center;
+    }
+    .ep-empty-icon {
+      width: 56px; height: 56px; border-radius: 14px;
+      background: linear-gradient(135deg, #E8F0FE, #DBEAFE);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .ep-empty-icon svg { width: 26px; height: 26px; color: var(--accent); }
+    .ep-empty h3 { font-size: 14px; font-weight: 600; color: var(--navy); }
+    .ep-empty p  { font-size: 12.5px; color: var(--txt-dim); max-width: 280px; line-height: 1.5; }
+
+    .ep-preview { display: none; padding: 20px; }
+    .ep-preview.visible { display: block; }
+    .ep-preview-meta {
+      display: flex; align-items: center; gap: 8px; margin-bottom: 14px;
+      padding: 8px 12px; background: var(--blue-lt); border-radius: 8px;
+    }
+    .ep-preview-meta svg { width: 14px; height: 14px; color: var(--accent); }
+    .ep-preview-meta span { font-size: 11.5px; color: var(--blue); font-weight: 500; }
+
+    .ep-md { font-size: 12.5px; line-height: 1.65; color: var(--txt-main); }
+    .ep-md h1 { font-size: 16px; font-weight: 700; color: var(--navy); margin: 0 0 12px; }
+    .ep-md h2 { font-size: 13px; font-weight: 700; color: var(--white); background: var(--navy); padding: 6px 10px; border-radius: 6px; margin: 18px 0 8px; }
+    .ep-md h3 { font-size: 12px; font-weight: 600; color: var(--blue); margin: 12px 0 4px; }
+    .ep-md p  { margin-bottom: 8px; }
+    .ep-md ul { padding-left: 16px; margin-bottom: 8px; }
+    .ep-md li { margin-bottom: 3px; }
+    .ep-md strong { font-weight: 600; color: var(--navy); }
+    .ep-md table { border-collapse: collapse; font-size: 11.5px; margin: 10px 0; width: 100%; }
+    .ep-md th { background: var(--navy); color: white; padding: 6px 10px; text-align: left; font-size: 11px; }
+    .ep-md td { padding: 5px 10px; border-bottom: 1px solid var(--border); }
+    .ep-md tr:nth-child(even) td { background: #F8FAFC; }
+    .ep-md blockquote { border-left: 3px solid var(--accent); padding: 8px 12px; background: var(--blue-lt); border-radius: 0 6px 6px 0; margin: 8px 0; color: var(--txt-mid); }
+    .ep-md code { background: #F1F5F9; padding: 1px 4px; border-radius: 4px; font-family: monospace; font-size: 11px; }
+
+    .ep-footer {
+      padding: 14px 20px; border-top: 1px solid var(--border);
+      background: var(--bg); display: flex; gap: 8px; align-items: center; flex-shrink: 0;
+    }
+    .ep-footer.hidden { display: none; }
+
+    .ep-download-btn {
+      flex: 1; padding: 10px 18px; border-radius: 9px; border: none;
+      font-size: 13px; font-weight: 600; cursor: pointer;
+      font-family: inherit; transition: all .15s;
+      display: flex; align-items: center; gap: 8px; justify-content: center;
+      box-shadow: 0 3px 12px rgba(0,0,0,.12);
+    }
+    .ep-download-btn:disabled { opacity: .45; cursor: not-allowed; }
+    .ep-download-btn svg { width: 15px; height: 15px; }
+    .btn-pdf-dl  { background: #C62828; color: white; }
+    .btn-pdf-dl:hover:not(:disabled)  { background: #B71C1C; }
+    .btn-pptx-dl { background: #D84315; color: white; }
+    .btn-pptx-dl:hover:not(:disabled) { background: #BF360C; }
+    .btn-csv-dl  { background: #1B5E20; color: white; }
+    .btn-csv-dl:hover:not(:disabled)  { background: #2E7D32; }
+
+    .ep-regen-btn {
+      padding: 10px 12px; border-radius: 9px;
+      border: 1.5px solid var(--border);
+      background: white; color: var(--txt-mid);
+      cursor: pointer; font-family: inherit; font-size: 12px;
+      transition: all .15s; display: flex; align-items: center; gap: 6px;
+    }
+    .ep-regen-btn:hover { background: var(--bg); color: var(--txt-main); border-color: var(--accent); }
+    .ep-regen-btn svg { width: 14px; height: 14px; }
+
+    .ep-progress-wrap { padding: 0 20px 10px; display: none; flex-direction: column; gap: 4px; }
+    .ep-progress-wrap.visible { display: flex; }
+    .ep-progress-label { font-size: 11px; color: var(--txt-dim); }
+    .ep-progress-bar { height: 3px; background: var(--border); border-radius: 2px; overflow: hidden; }
+    .ep-progress-fill { height: 100%; background: linear-gradient(90deg, var(--blue), var(--accent)); border-radius: 2px; transition: width .5s ease; width: 0%; }
+  </style>
+</head>
+<body>
+
+<!-- ── Login Overlay ──────────────────────────────────────────────────────── -->
+<div id="login-overlay">
+  <div class="login-card">
+    <img src="https://raw.githubusercontent.com/tejaswinijandhyala-ui/DIUD/main/logo.png" alt="DIUD Logo" class="login-logo">
+    <h1>Welcome to <span>DIUD</span><br>Data Intelligence Agent</h1>
+    <div class="login-fields">
+      <div class="login-field">
+        <label>Username</label>
+        <input type="text" id="login-user" placeholder="Enter your username" autocomplete="username">
+      </div>
+      <div class="login-field">
+        <label>Password</label>
+        <input type="password" id="login-pass" placeholder="Enter your password" autocomplete="current-password" onkeydown="if(event.key==='Enter') doLogin()">
+      </div>
+      <div class="login-error" id="login-error"></div>
+      <button class="login-btn" onclick="doLogin()">Sign In</button>
+    </div>
+    <div class="login-footer">Decision Intelligence Using Data · Kore.ai</div>
+  </div>
+</div>
+
+<!-- ── Negative Feedback Detail Modal ────────────────────────────────────── -->
+<div id="feedback-modal-overlay">
+  <div class="feedback-modal-card">
+    <h3>What went wrong?</h3>
+    <div class="feedback-modal-field">
+      <label for="feedback-issue-type">Issue type (optional)</label>
+      <select class="ep-select" id="feedback-issue-type" style="width:100%;">
+        <option value="">Select…</option>
+        <option value="wrong_numbers">Wrong numbers or totals</option>
+        <option value="wrong_chart">Wrong or missing chart</option>
+        <option value="wrong_filters">Wrong region/stage/date filters</option>
+        <option value="misunderstood_question">Misunderstood the question</option>
+        <option value="incomplete">Incomplete or cut off</option>
+        <option value="sql_or_db_error">SQL or database error</option>
+        <option value="other">Other</option>
+      </select>
+    </div>
+    <div class="feedback-modal-field">
+      <label for="feedback-comment">Details (optional)</label>
+      <textarea class="feedback-modal-textarea" id="feedback-comment" placeholder="What was unsatisfying about this response?"></textarea>
+    </div>
+    <div class="feedback-modal-actions">
+      <button class="feedback-modal-cancel-btn" onclick="closeFeedbackModal()">Cancel</button>
+      <button class="feedback-modal-submit-btn" onclick="submitFeedbackModal()">Submit</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Topbar ─────────────────────────────────────────────────────────────── -->
+<header class="topbar">
+  <div class="topbar-brand">
+    <div class="topbar-logo-box">
+      <img src="https://raw.githubusercontent.com/tejaswinijandhyala-ui/DIUD/main/logo.png" alt="DIUD Logo" class="topbar-logo-img">
+    </div>
+    <div>
+      <div class="topbar-title">Decision Intelligence Using Data (DIUD)</div>
+      <div class="topbar-sub">Kore.ai</div>
+    </div>
+  </div>
+  <div class="topbar-actions">
+    <a href="/debug/db" target="_blank" class="debug-link" title="Test ClickHouse connectivity">🔌 Debug DB</a>
+    <button class="debug-link" style="cursor:pointer;" onclick="openAdminPanel()" title="View debug reports (metrics, feedback, alerts, proposals)">🛠 Admin</button>
+    <button class="new-chat-btn" onclick="newChat()">+ New Chat</button>
+  </div>
+</header>
+
+<!-- ── Body ───────────────────────────────────────────────────────────────── -->
+<div class="body-wrap" id="body-wrap">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-label">Quick Questions</div>
+
+    <div class="sidebar-label" style="margin-top:6px;">📊 Pipeline</div>
+    <button class="suggestion-chip" onclick="sendSuggestion(this.textContent)">How many deals are in each stage right now?</button>
+    <button class="suggestion-chip" onclick="sendSuggestion(this.textContent)">What's the total active pipeline value for FY27?</button>
+    <button class="suggestion-chip" onclick="sendSuggestion(this.textContent)">Show me the top 10 deals by value with their AEs</button>
+    <button class="suggestion-chip" onclick="sendSuggestion(this.textContent)">Pipeline breakdown by region</button>
+
+    <hr class="sidebar-divider"/>
+
+    <div class="sidebar-label">📈 Attainment & Targets</div>
+    <button class="suggestion-chip" onclick="sendSuggestion(this.textContent)">10% PipeGen attainment vs target by region for FY27</button>
+    <button class="suggestion-chip" onclick="sendSuggestion(this.textContent)">What's our EOP pipeline attainment for this quarter?</button>
+    <button class="suggestion-chip" onclick="sendSuggestion(this.textContent)">Pipeline coverage vs quota by region</button>
+
+    <hr class="sidebar-divider"/>
+
+    <div class="sidebar-label">👤 AE Focus</div>
+    <button class="suggestion-chip" onclick="sendSuggestion(this.textContent)">Which AEs have the most stalled deals?</button>
+    <button class="suggestion-chip" onclick="sendSuggestion(this.textContent)">BANT qualification rate across active pipeline</button>
+    <button class="suggestion-chip" onclick="sendSuggestion(this.textContent)">Show deals by account priority (P1-P4 vs others)</button>
+    <button class="suggestion-chip" onclick="sendSuggestion(this.textContent)">AE quota attainment and win rate for FY27</button>
+
+    <hr class="sidebar-divider"/>
+
+    <div class="sidebar-label">📞 BDR Focus</div>
+    <button class="suggestion-chip" onclick="sendSuggestion(this.textContent)">BDR pipeline generation and conversion funnel</button>
+    <button class="suggestion-chip" onclick="sendSuggestion(this.textContent)">Meetings created vs opportunities generated by BDR</button>
+    <button class="suggestion-chip" onclick="sendSuggestion(this.textContent)">BDR target attainment by region</button>
+
+    <hr class="sidebar-divider"/>
+
+    <div class="sidebar-label">🤝 Partnership</div>
+    <button class="suggestion-chip" onclick="sendSuggestion(this.textContent)">Partner pipeline by type — Hyperscaler vs GSI/SI vs Reseller</button>
+    <button class="suggestion-chip" onclick="sendSuggestion(this.textContent)">AWS vs Microsoft hyperscaler pipeline for FY27</button>
+    <button class="suggestion-chip" onclick="sendSuggestion(this.textContent)">PSD-level partner attainment vs target</button>
+
+    <hr class="sidebar-divider"/>
+
+    <div class="sidebar-label">📣 Marketing & MQL</div>
+    <button class="suggestion-chip" onclick="sendSuggestion(this.textContent)">MQL actuals vs target by region for this quarter</button>
+    <button class="suggestion-chip" onclick="sendSuggestion(this.textContent)">MQL-to-deal conversion rate for FY27</button>
+    <button class="suggestion-chip" onclick="sendSuggestion(this.textContent)">Marketing-sourced pipeline amount and deal count</button>
+
+    <hr class="sidebar-divider"/>
+
+    <div class="sidebar-label">📉 Win / Loss</div>
+    <button class="suggestion-chip" onclick="sendSuggestion(this.textContent)">Win rate by deal source for FY27</button>
+    <button class="suggestion-chip" onclick="sendSuggestion(this.textContent)">Recent lost deals and their primary loss reasons</button>
+    <button class="suggestion-chip" onclick="sendSuggestion(this.textContent)">Which competitors appear most in lost deals?</button>
+
+    <hr class="sidebar-divider"/>
+
+    <div class="sidebar-label">📥 Export</div>
+    <button class="suggestion-chip" onclick="openExportPanel('pdf')">📄 Export as report</button>
+    <button class="suggestion-chip" onclick="openExportPanel('pptx')">📊 Create a presentation</button>
+
+    <div id="conn-badge" class="conn-badge checking" style="margin-top:auto;"
+         onclick="checkConn()" title="Click to recheck ClickHouse connection">
+      <span class="dot"></span>
+      <span id="conn-label">Checking DB…</span>
+    </div>
+  </aside>
+
+  <!-- Chat pane -->
+  <main class="chat-pane" id="chat-pane">
+    <div class="messages" id="messages">
+      <div id="welcome">
+        <div class="welcome-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+          </svg>
+        </div>
+        <h2>Hey, I'm DIUD 👋</h2>
+        <p>I'm your Data Intelligence Agent here to help you analyse live ClickHouse data.<br>
+           Ask me about pipeline deals, AE performance, win/loss analysis, BANT rates, regional breakdowns, and more.<br><br>
+           <em style="color:var(--txt-dim);font-size:12px;">💡 Tip: Type "export this as PDF" or "create a presentation" to export your analysis.</em></p>
+      </div>
+    </div>
+
+    <div class="input-area">
+      <div class="input-row">
+        <div style="position:relative;">
+          <div class="model-pill" id="model-pill" onclick="toggleModelDropdown()">
+            <span class="model-dot"></span>
+            <span id="model-pill-label">Sonnet</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                 style="width:11px;height:11px;opacity:.6"><polyline points="6 9 12 15 18 9"/></svg>
+          </div>
+          <div class="model-dropdown" id="model-dropdown">
+            <div class="model-option active" id="opt-sonnet" onclick="selectModel('sonnet')">
+              <div class="model-option-name">
+                ...
+                claude-sonnet-4-6
+              </div>
+              <div class="model-option-desc">Fast · Best for most queries</div>
+            </div>
+            <div class="model-option" id="opt-opus" onclick="selectModel('opus')">
+              <div class="model-option-name" style="color:#7C3AED;">
+                ...
+                claude-opus-4-6
+              </div>
+              <div class="model-option-desc">More powerful · Complex analysis</div>
+            </div>
+          </div>
+        </div>
+        <textarea id="chat-input" rows="1"
+          placeholder="Ask about pipeline, deals, AEs, win rates… or say 'export as PDF'"
+          onkeydown="handleKey(event)"></textarea>
+        <button id="send-btn" onclick="send()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+            <line x1="22" y1="2" x2="11" y2="13"/>
+            <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </main>
+
+  <!-- ── Export Side Panel ──────────────────────────────────────────────── -->
+  <aside class="export-panel" id="export-panel">
+    <div class="ep-header">
+      <div class="ep-header-row">
+        <div class="ep-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <line x1="9" y1="13" x2="15" y2="13"/>
+            <line x1="9" y1="17" x2="15" y2="17"/>
+          </svg>
+          Export Document
+        </div>
+        <button class="ep-close" onclick="closeExportPanel()" title="Close">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+      <div class="ep-config">
+        <div class="ep-input-group">
+          <div class="ep-label">Document Title</div>
+          <input class="ep-input" id="ep-title" type="text" value="Pipeline Intelligence Report" placeholder="Report title…">
+        </div>
+        <div class="ep-config-row">
+          <div class="ep-input-group">
+            <div class="ep-label">Format</div>
+            <select class="ep-select" id="ep-format">
+              <option value="pdf">📄 PDF Report</option>
+              <option value="pptx">📊 PowerPoint</option>
+              <option value="csv">📋 CSV (raw data)</option>
+              <option value="xlsx">📊 Excel (formatted)</option>
+            </select>
+          </div>
+          <div class="ep-input-group" id="ep-detail-group">
+            <div class="ep-label">Detail Level</div>
+            <select class="ep-select" id="ep-detail">
+              <option value="detailed">📝 Entire Conversation (verbatim)</option>
+              <option value="summary">📊 Summary Report (AI-generated)</option>
+            </select>
+          </div>
+        </div>
+        <button class="ep-generate-btn" id="ep-generate-btn" onclick="generatePreview()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+            <circle cx="12" cy="12" r="10"/>
+            <polygon points="10 8 16 12 10 16 10 8"/>
+          </svg>
+          Generate Preview
+        </button>
+        <div id="ep-dataset-badge" style="display:none;align-items:center;gap:6px;padding:6px 10px;background:#E8F5E9;border-radius:7px;font-size:11.5px;color:#2E7D32;font-weight:500;border:1px solid #C8E6C9;"></div>
+      </div>
+    </div>
+
+    <div class="ep-progress-wrap" id="ep-progress-wrap">
+      <div class="ep-progress-label" id="ep-progress-label">Analysing conversation…</div>
+      <div class="ep-progress-bar"><div class="ep-progress-fill" id="ep-progress-fill"></div></div>
+    </div>
+
+    <div class="ep-body" id="ep-body">
+      <div class="ep-empty" id="ep-empty">
+        <div class="ep-empty-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+          </svg>
+        </div>
+        <h3>Configure & Preview</h3>
+        <p>Set your document title, format, and detail level above, then click <strong>Generate Preview</strong> to see a formatted preview before downloading.</p>
+      </div>
+      <div class="ep-loading" id="ep-loading">
+        <div class="ep-spinner"></div>
+        <div class="ep-loading-text">
+          <strong>AI is preparing your document…</strong><br>
+          <span style="font-size:11.5px;color:var(--txt-dim)">Extracting insights from your conversation</span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px;width:100%;max-width:280px;" id="ep-steps"></div>
+      </div>
+      <div class="ep-preview" id="ep-preview">
+        <div class="ep-preview-meta" id="ep-preview-meta">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+          </svg>
+          <span id="ep-preview-meta-text">Preview ready</span>
+        </div>
+        <div class="ep-md" id="ep-preview-content"></div>
+      </div>
+    </div>
+
+    <div class="ep-footer hidden" id="ep-footer">
+      <button class="ep-regen-btn" onclick="generatePreview()" title="Regenerate">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+          <path d="M23 4v6h-6"/><path d="M1 20v-6h6"/>
+          <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+        </svg>
+        Regenerate
+      </button>
+      <button class="ep-download-btn btn-pdf-dl" id="ep-dl-pdf" onclick="downloadDoc('pdf')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+        </svg>
+        Download PDF
+      </button>
+      <button class="ep-download-btn btn-pptx-dl" id="ep-dl-pptx" onclick="downloadDoc('pptx')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+        </svg>
+        Download PPTX
+      </button>
+      <button class="ep-download-btn btn-csv-dl" id="ep-dl-csv" onclick="downloadCSV()" style="display:none;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+        </svg>
+        <span id="ep-csv-label">Download CSV</span>
+      </button>
+      <button class="ep-download-btn btn-csv-dl" id="ep-dl-xlsx" onclick="downloadXLSX()" style="display:none;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+        </svg>
+        <span id="ep-xlsx-label">Download Excel</span>
+      </button>
+    </div>
+  </aside>
+
+  <aside class="admin-panel" id="admin-panel">
+    <div class="admin-header">
+      <div class="admin-title">🛠 Debug Reports</div>
+      <button class="ep-close" onclick="closeAdminPanel()" title="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="admin-tabs" id="admin-tabs" style="display:none;">
+      <button class="admin-tab active" data-tab="metrics" onclick="switchAdminTab('metrics')">Metrics</button>
+      <button class="admin-tab" data-tab="feedback" onclick="switchAdminTab('feedback')">Feedback</button>
+      <button class="admin-tab" data-tab="alerts" onclick="switchAdminTab('alerts')">Alerts</button>
+      <button class="admin-tab" data-tab="proposals" onclick="switchAdminTab('proposals')">Proposals</button>
+    </div>
+    <div class="admin-body" id="admin-body">
+      <div class="admin-token-gate" id="admin-token-gate">
+        <p>Enter the admin token to view DIUD's debug reports (rule metrics, user feedback, flagged issues, and fix proposals).</p>
+        <input class="ep-input" id="admin-token-input" type="password" placeholder="Admin token…" onkeydown="if(event.key==='Enter') unlockAdminPanel()">
+        <button class="ep-generate-btn" onclick="unlockAdminPanel()">Unlock</button>
+        <p id="admin-token-error" style="color:#dc2626;"></p>
+      </div>
+    </div>
+  </aside>
+</div>
+
+<div id="toast"></div>
+
+<script>
+  /* ======================================================================
+     STATE
+     ====================================================================== */
+  const SESSION_ID   = crypto.randomUUID();
+  let history        = [];
+  let busy           = false;
+  let panelOpen      = false;
+  let previewContent = null;
+  let exportBusy     = false;
+  let datasetRows    = 0;
+  let selectedModel  = "sonnet";
+
+  /* ======================================================================
+     MARKED CONFIG — sandboxed iframe for HTML blocks
+     ====================================================================== */
+  const renderer = new marked.Renderer();
+
+  // Override fenced code blocks: html → sandboxed iframe, others → styled <pre>
+  renderer.code = function(code, lang) {
+    if (lang === 'html') {
+      // Inject font + reset into the srcdoc so the chart looks self-contained
+      const doc = `<!DOCTYPE html><html><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:transparent;font-family:'Inter',system-ui,sans-serif;overflow:hidden;}
+</style>
+</head><body>${code}
+<script>
+  // Auto-resize: tell parent the real height after render
+  function notifyHeight(){
+    var h=document.body.scrollHeight||document.documentElement.scrollHeight;
+    parent.postMessage({type:'diud-iframe-height',height:h},'*');
+  }
+  // Fire on load + after short delay for any dynamic content
+  window.addEventListener('load',function(){notifyHeight();setTimeout(notifyHeight,300);setTimeout(notifyHeight,800);});
+  new MutationObserver(notifyHeight).observe(document.body,{childList:true,subtree:true,attributes:true});
+<\/script>
+</body></html>`;
+      const id = 'iv-' + Math.random().toString(36).slice(2,9);
+      // srcdoc is set via JS to avoid HTML escaping issues with backticks etc.
+      return `<div class="inline-visual-wrap" id="wrap-${id}">
+  <span class="inline-visual-badge">VISUAL</span>
+  <iframe id="${id}" sandbox="allow-scripts" scrolling="no"
+    style="height:300px;"
+    data-srcdoc="${encodeURIComponent(doc)}"></iframe>
+</div>`;
+    }
+    // Regular code block
+    const escaped = code.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    const cls = lang ? ` class="language-${lang}"` : '';
+    return `<pre><code${cls}>${escaped}</code></pre>`;
+  };
+
+  marked.setOptions({ breaks: true, gfm: true, renderer });
+
+  /* ======================================================================
+     IFRAME HEIGHT LISTENER
+     After marked injects iframe markup into the DOM, we set srcdoc and
+     listen for postMessage to auto-size the iframe to its real content.
+     ====================================================================== */
+  window.addEventListener('message', function(e) {
+    if (!e.data || e.data.type !== 'diud-iframe-height') return;
+    // Find the iframe that sent this message
+    const iframes = document.querySelectorAll('.inline-visual-wrap iframe');
+    iframes.forEach(function(f) {
+      try {
+        if (f.contentWindow === e.source) {
+          const h = Math.max(80, Math.min(e.data.height + 24, 900));
+          f.style.height = h + 'px';
+        }
+      } catch(_) {}
+    });
+  });
+
+  // Called after appendBubble inserts HTML — hydrate deferred iframes
+  function hydrateIframes(container) {
+    container.querySelectorAll('iframe[data-srcdoc]').forEach(function(f) {
+      if (f.dataset.srcdocLoaded) return;
+      f.dataset.srcdocLoaded = '1';
+      f.srcdoc = decodeURIComponent(f.dataset.srcdoc);
+      delete f.dataset.srcdoc;
+    });
+  }
+
+  /* ======================================================================
+     VISUALIZATION RENDERER
+     Chat Response -> VisualizationRenderer -> Render Chart
+
+     This is the frontend half of the standardized backend contract:
+     { type, title, subtitle, x_axis_label, y_axis_label, data } for
+     kpi/bar/horizontal_bar/line/funnel/pie, or
+     { type: "table", title, subtitle, columns, rows } for tables.
+
+     The frontend is responsible for rendering only — no business logic
+     or reasoning happens here. The backend's visualization validator
+     already guarantees this object is well-formed by the time it
+     reaches this function; this code trusts that contract rather than
+     re-validating it.
+     ====================================================================== */
+
+  const CHART_COLORS = ['#1565C0', '#1E88E5', '#00897B', '#F59E0B', '#7C3AED', '#E53935', '#43A047', '#5E35B1'];
+
+  function renderVisualization(mountEl, viz) {
+    const wrap = document.createElement('div');
+    wrap.className = 'viz-wrap';
+
+    let headerHtml = '';
+    if (viz.title || viz.subtitle) {
+      headerHtml = `<div class="viz-header">
+        ${viz.title ? `<div class="viz-title">${escapeHtml(viz.title)}</div>` : ''}
+        ${viz.subtitle ? `<div class="viz-subtitle">${escapeHtml(viz.subtitle)}</div>` : ''}
+      </div>`;
+    }
+
+    const bodyEl = document.createElement('div');
+    bodyEl.className = 'viz-body';
+
+    wrap.innerHTML = headerHtml;
+    wrap.appendChild(bodyEl);
+    mountEl.appendChild(wrap);
+
+    // ---- Chart Factory: pick the renderer for this visualization type ----
+    switch (viz.type) {
+      case 'kpi':          renderKpiCard(bodyEl, viz); break;
+      case 'table':         renderDataTable(bodyEl, viz); break;
+      case 'funnel':         renderFunnelChart(bodyEl, viz); break;
+      case 'bar':              renderCanvasChart(bodyEl, viz, 'bar');  break;
+      case 'horizontal_bar':    renderCanvasChart(bodyEl, viz, 'hbar'); break;
+      case 'line':                renderCanvasChart(bodyEl, viz, 'line'); break;
+      case 'pie':                   renderCanvasChart(bodyEl, viz, 'pie');  break;
+      default:
+        bodyEl.innerHTML = `<div class="viz-empty">Unsupported visualization type: ${escapeHtml(String(viz.type))}</div>`;
+    }
+  }
+
+  // ---- KPI Card ---------------------------------------------------------
+  function renderKpiCard(bodyEl, viz) {
+    const point = (viz.data && viz.data[0]) || {};
+    const value = point.value;
+    const displayValue = typeof value === 'number'
+      ? (Math.abs(value) >= 1000 ? value.toLocaleString() : value)
+      : escapeHtml(String(value ?? '—'));
+    bodyEl.innerHTML = `
+      <div class="viz-kpi">
+        <div class="viz-kpi-value">${displayValue}</div>
+        <div class="viz-kpi-label">${escapeHtml(point.label || '')}</div>
+      </div>`;
+  }
+
+  // ---- Data Table ---------------------------------------------------------
+  function renderDataTable(bodyEl, viz) {
+    const columns = viz.columns || [];
+    const rows = viz.rows || [];
+    if (!columns.length || !rows.length) {
+      bodyEl.innerHTML = `<div class="viz-empty">No data to display.</div>`;
+      return;
+    }
+    const headerRow = columns.map(c => `<th>${escapeHtml(c)}</th>`).join('');
+    const bodyRows = rows.slice(0, 100).map(row =>
+      `<tr>${columns.map(c => `<td>${escapeHtml(String(row[c] ?? ''))}</td>`).join('')}</tr>`
+    ).join('');
+    bodyEl.innerHTML = `
+      <div class="viz-table-wrap">
+        <table class="viz-table">
+          <thead><tr>${headerRow}</tr></thead>
+          <tbody>${bodyRows}</tbody>
+        </table>
+      </div>
+      ${rows.length > 100 ? `<div class="viz-subtitle" style="padding-top:6px;">Showing 100 of ${rows.length.toLocaleString()} rows.</div>` : ''}`;
+  }
+
+  // ---- Funnel Chart (CSS bars, no charting library needed) -------------
+  function renderFunnelChart(bodyEl, viz) {
+    const data = viz.data || [];
+    if (!data.length) {
+      bodyEl.innerHTML = `<div class="viz-empty">No funnel data to display.</div>`;
+      return;
+    }
+    const maxValue = Math.max(...data.map(d => Number(d.value) || 0), 1);
+    const rows = data.map(d => {
+      const val = Number(d.value) || 0;
+      const pct = Math.max((val / maxValue) * 100, 4);
+      return `
+        <div class="viz-funnel-row">
+          <div class="viz-funnel-label">${escapeHtml(String(d.label ?? ''))}</div>
+          <div class="viz-funnel-bar-track">
+            <div class="viz-funnel-bar-fill" style="width:${pct}%;">
+              <span class="viz-funnel-value">${val.toLocaleString()}</span>
+            </div>
+          </div>
+        </div>`;
+    }).join('');
+    bodyEl.innerHTML = `<div class="viz-funnel">${rows}</div>`;
+  }
+
+  // ---- Bar / Horizontal Bar / Line / Pie (Chart.js) ---------------------
+  function renderCanvasChart(bodyEl, viz, kind) {
+    const data = viz.data || [];
+    if (!data.length) {
+      bodyEl.innerHTML = `<div class="viz-empty">No data to display.</div>`;
+      return;
+    }
+    const canvasWrap = document.createElement('div');
+    canvasWrap.className = 'viz-canvas-wrap';
+    const canvas = document.createElement('canvas');
+    canvasWrap.appendChild(canvas);
+    bodyEl.appendChild(canvasWrap);
+
+    const labels = data.map(d => String(d.label ?? ''));
+    const values = data.map(d => Number(d.value) || 0);
+
+    if (kind === 'pie') {
+      new Chart(canvas, {
+        type: 'doughnut',
+        data: {
+          labels,
+          datasets: [{ data: values, backgroundColor: labels.map((_, i) => CHART_COLORS[i % CHART_COLORS.length]) }],
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: { legend: { position: 'right', labels: { boxWidth: 12, font: { size: 11 } } } },
+        },
+      });
+      return;
+    }
+
+    const isHorizontal = kind === 'hbar';
+    new Chart(canvas, {
+      type: kind === 'line' ? 'line' : 'bar',
+      data: {
+        labels,
+        datasets: [{
+          label: viz.y_axis_label || 'Value',
+          data: values,
+          backgroundColor: kind === 'line' ? 'rgba(30,136,229,.15)' : CHART_COLORS[0],
+          borderColor: CHART_COLORS[0],
+          borderWidth: kind === 'line' ? 2 : 0,
+          borderRadius: kind === 'line' ? 0 : 6,
+          fill: kind === 'line',
+          tension: .3,
+        }],
+      },
+      options: {
+        indexAxis: isHorizontal ? 'y' : 'x',
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { title: { display: !!(isHorizontal ? viz.y_axis_label : viz.x_axis_label), text: (isHorizontal ? viz.y_axis_label : viz.x_axis_label) || '' }, grid: { display: false } },
+          y: { title: { display: !!(isHorizontal ? viz.x_axis_label : viz.y_axis_label), text: (isHorizontal ? viz.x_axis_label : viz.y_axis_label) || '' }, beginAtZero: true },
+        },
+      },
+    });
+  }
+
+  /* ======================================================================
+     MODEL SWITCHER
+     ====================================================================== */
+  function toggleModelDropdown() {
+    document.getElementById('model-dropdown').classList.toggle('open');
+  }
+  function selectModel(m) {
+    selectedModel = m;
+    const pill  = document.getElementById('model-pill');
+    const label = document.getElementById('model-pill-label');
+    const optS  = document.getElementById('opt-sonnet');
+    const optO  = document.getElementById('opt-opus');
+    const chkS  = optS.querySelector('svg');
+    const chkO  = optO.querySelector('svg');
+    if (m === 'opus') {
+      label.textContent = 'Opus'; pill.classList.add('opus');
+      optO.classList.add('active'); optS.classList.remove('active');
+      chkO.style.opacity = '1'; chkS.style.opacity = '0';
+    } else {
+      label.textContent = 'Sonnet'; pill.classList.remove('opus');
+      optS.classList.add('active'); optO.classList.remove('active');
+      chkS.style.opacity = '1'; chkO.style.opacity = '0';
+    }
+    document.getElementById('model-dropdown').classList.remove('open');
+  }
+  document.addEventListener('click', function(e) {
+    if (!e.target.closest('#model-pill') && !e.target.closest('#model-dropdown'))
+      document.getElementById('model-dropdown')?.classList.remove('open');
+  });
+
+  /* ======================================================================
+     EXPORT FORMAT DETECTION
+     ====================================================================== */
+  function detectExportFormat(text) {
+    if (/pptx|powerpoint|presentation|slide|deck/i.test(text)) return 'pptx';
+    if (/\b(xlsx|excel|spreadsheet)\b/i.test(text)) return 'xlsx';
+    if (/csv/i.test(text)) return 'csv';
+    if (/pdf/i.test(text)) return 'pdf';
+    // Plain "give me the list of these deals" / "list all deals" style asks
+    // have no explicit format keyword — a formatted spreadsheet is the
+    // natural default for a flat list of records, not a narrative PDF.
+    if (/\blist\b.*\bdeals?\b|\bdeals?\b.*\blist\b/i.test(text)) return 'xlsx';
+    return null;
+  }
+
+  /* ======================================================================
+     LOGIN
+     ====================================================================== */
+  const VALID_USERS = { "diud": "DiuD@2026" };
+  function doLogin() {
+    const user = document.getElementById('login-user').value.trim();
+    const pass = document.getElementById('login-pass').value;
+    const err  = document.getElementById('login-error');
+    if (!user || !pass) { err.textContent = 'Please enter username and password.'; return; }
+    if (VALID_USERS[user.toLowerCase()] === pass) {
+      document.getElementById('login-overlay').style.display = 'none';
+      err.textContent = '';
+    } else {
+      err.textContent = 'Invalid username or password.';
+      document.getElementById('login-pass').value = '';
+      document.getElementById('login-pass').focus();
+    }
+  }
+  document.getElementById('login-user').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') document.getElementById('login-pass').focus();
+  });
+
+  /* ======================================================================
+     AUTO-RESIZE TEXTAREA
+     ====================================================================== */
+  const input = document.getElementById('chat-input');
+  input.addEventListener('input', function() {
+    this.style.height = 'auto';
+    this.style.height = Math.min(this.scrollHeight, 140) + 'px';
+  });
+  function handleKey(e) {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
+  }
+
+  /* ======================================================================
+     SEND MESSAGE
+     ====================================================================== */
+  async function send() {
+    const text = input.value.trim();
+    if (!text || busy) return;
+    const welcome = document.getElementById('welcome');
+    if (welcome) welcome.remove();
+    appendBubble('user', text);
+    history.push({ role: 'user', content: text });
+    input.value = '';
+    input.style.height = 'auto';
+    setBusy(true);
+    const typingId = addTyping();
+    try {
+      // NEW BACKEND: POST /api/chat, not /chat. The new backend is
+      // stateless per-request — it doesn't want the full history array,
+      // just the conversation_id, and it looks up history itself from
+      // its own session store. SESSION_ID doubles as conversation_id.
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question: text, conversation_id: SESSION_ID }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.detail || `HTTP ${res.status}`);
+      }
+      const data = await res.json();
+      removeTyping(typingId);
+
+      // NEW BACKEND: no dataset_rows field. The export panel's row badge
+      // only makes sense when the visualization is an actual table (a
+      // KPI or chart doesn't represent "rows ready to export" the same
+      // way) -- and even then, the export panel re-confirms the real
+      // count against the backend before downloading, so this is just
+      // a rough client-side hint, not the source of truth.
+      if (data.visualization && data.visualization.type === 'table' && data.visualization.rows) {
+        if (data.visualization.rows.length > datasetRows) {
+          datasetRows = data.visualization.rows.length;
+          updateDatasetBadge();
+        }
+      }
+
+      // NEW BACKEND: status tells you what kind of turn this was.
+      // "needs_clarification" and "failed"/"partial_success" both come
+      // back with an honest, pre-written message in `response` — safe
+      // to display directly, same as any other assistant reply.
+      appendBubble('assistant', data.response, text, data.visualization);
+      history.push({ role: 'assistant', content: data.response });
+
+    } catch(err) {
+      removeTyping(typingId);
+      appendErrorBubble(err.message, { message: text, historyLen: history.length });
+      showToast('Error: ' + err.message, 'error');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  function sendSuggestion(text) { input.value = text; send(); }
+  function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+  /* ======================================================================
+     RETRY
+     ====================================================================== */
+  async function retryError(errorId) {
+    if (busy) return;
+    const errEl   = document.querySelector(`[data-error-id="${errorId}"]`);
+    const btn     = document.getElementById(`retrybtn-${errorId}`);
+    const origMsg = errEl ? errEl.dataset.retryMsg : '';
+    if (!origMsg) { showToast('Nothing to retry.', 'error'); return; }
+    if (btn) {
+      btn.disabled = true; btn.classList.add('retrying');
+      btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg> Retrying…`;
+    }
+    setBusy(true);
+    try {
+      // NEW BACKEND: same /api/chat contract as send() — see comments there.
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question: origMsg, conversation_id: SESSION_ID }),
+      });
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.detail || `HTTP ${res.status}`);
+      }
+      const data = await res.json();
+      if (data.visualization && data.visualization.type === 'table' && data.visualization.rows && data.visualization.rows.length > 0) {
+        datasetRows = data.visualization.rows.length;
+        updateDatasetBadge();
+      }
+      if (errEl) errEl.remove();
+      appendBubble('user', origMsg);
+      history.push({ role: 'user', content: origMsg });
+      appendBubble('assistant', data.response, origMsg, data.visualization);
+      history.push({ role: 'assistant', content: data.response });
+      showToast('✅ Retry succeeded', 'success');
+    } catch(err) {
+      if (btn) {
+        btn.disabled = false; btn.classList.remove('retrying');
+        btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg> Retry`;
+      }
+      showToast('Retry failed: ' + err.message, 'error');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  function updateDatasetBadge() {
+    const badge = document.getElementById('ep-dataset-badge');
+    if (!badge) return;
+    if (datasetRows > 0) {
+      badge.textContent = `📊 ${datasetRows.toLocaleString()} rows ready to export`;
+      badge.style.display = 'flex';
+    } else {
+      badge.style.display = 'none';
+    }
+  }
+
+  /* ======================================================================
+     BUBBLE HELPERS
+     ====================================================================== */
+  function appendBubble(role, content, userQuestion, visualization) {
+    const msgs = document.getElementById('messages');
+    const now  = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const div  = document.createElement('div');
+    div.className = `msg ${role}`;
+    const diudAvatar = `<img src="https://raw.githubusercontent.com/tejaswinijandhyala-ui/DIUD/main/logo.png" alt="DIUD" style="width:100%;height:100%;object-fit:contain;border-radius:8px;">`;
+    const initials = role === 'user' ? 'YOU' : diudAvatar;
+    let body;
+    if (role === 'assistant') {
+      const vizId = 'viz-' + Math.random().toString(36).slice(2, 9);
+      const vizPlaceholder = (visualization && visualization.type)
+        ? `<div id="${vizId}" class="viz-mount"></div>`
+        : '';
+      body = `<div class="msg-bubble chat-md">${marked.parse(content)}</div>
+              ${vizPlaceholder}
+              <div class="msg-actions">
+                <button class="msg-copy-btn" title="Copy response">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                  </svg>
+                  Copy
+                </button>
+                <button class="msg-feedback-btn" data-rating="up" title="Good answer">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/>
+                  </svg>
+                </button>
+                <button class="msg-feedback-btn" data-rating="down" title="Not helpful">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3zm7-13h3a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2h-3"/>
+                  </svg>
+                </button>
+                <span class="msg-feedback-thanks" hidden>Thanks for the feedback</span>
+              </div>
+              <div class="msg-time">${now}</div>`;
+    } else {
+      body = `<div class="msg-bubble">${escapeHtml(content)}</div><div class="msg-time">${now}</div>`;
+    }
+    div.innerHTML = `<div class="msg-avatar">${initials}</div><div class="msg-body">${body}</div>`;
+
+    if (role === 'assistant') {
+      const btn = div.querySelector('.msg-copy-btn');
+      btn.addEventListener('click', function() {
+        navigator.clipboard.writeText(content).then(function() {
+          btn.classList.add('copied');
+          btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Copied!`;
+          setTimeout(function() {
+            btn.classList.remove('copied');
+            btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copy`;
+          }, 2000);
+        }).catch(function() {
+          const ta = document.createElement('textarea');
+          ta.value = content; ta.style.position = 'fixed'; ta.style.opacity = '0';
+          document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
+          btn.classList.add('copied');
+          btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Copied!`;
+          setTimeout(function() {
+            btn.classList.remove('copied');
+            btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copy`;
+          }, 2000);
+        });
+      });
+
+      const feedbackBtns = div.querySelectorAll('.msg-feedback-btn');
+      const thanksEl = div.querySelector('.msg-feedback-thanks');
+      feedbackBtns.forEach(function(fbtn) {
+        fbtn.addEventListener('click', function() {
+          const rating = fbtn.dataset.rating;
+          if (rating === 'down') {
+            openFeedbackModal(userQuestion || '', content, feedbackBtns, fbtn, thanksEl);
+            return;
+          }
+          feedbackBtns.forEach(function(b) { b.disabled = true; });
+          fbtn.classList.add('selected', rating);
+          if (thanksEl) thanksEl.hidden = false;
+          sendFeedback({ userQuestion: userQuestion || '', content: content, rating: rating });
+        });
+      });
+    }
+
+    msgs.appendChild(div);
+
+    // Hydrate AFTER the element is in the DOM -- same reasoning as
+    // iframe hydration below: a canvas or container has to actually
+    // exist in the document before Chart.js (or a DOM-based renderer)
+    // can attach to it.
+    if (role === 'assistant') {
+      hydrateIframes(div);
+      if (visualization && visualization.type) {
+        const mount = div.querySelector('.viz-mount');
+        if (mount) renderVisualization(mount, visualization);
+      }
+    }
+
+    msgs.scrollTop = msgs.scrollHeight;
+  }
+
+  /* ======================================================================
+     FEEDBACK
+     ====================================================================== */
+  function sendFeedback({ userQuestion, content, rating, issueType, comment }) {
+    // NEW BACKEND: POST /api/feedback, with feedback_type instead of a
+    // plain up/down rating. The new backend's VALID_FEEDBACK_TYPES are:
+    // correct, incorrect, better_explanation, wrong_sql, suggest_rule.
+    // A plain thumbs-down without a specific issue type maps to
+    // "incorrect"; the issue-type dropdown in the modal maps to
+    // "wrong_sql" when that's specifically what was selected, otherwise
+    // stays "incorrect" with the detail preserved in feedback_note.
+    const feedbackType = rating === 'up'
+      ? 'correct'
+      : (issueType === 'sql_or_db_error' ? 'wrong_sql' : 'incorrect');
+
+    fetch('/api/feedback', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        conversation_id: SESSION_ID,
+        question: userQuestion || '',
+        response: content,
+        feedback_type: feedbackType,
+        feedback_note: [issueType, comment].filter(Boolean).join(': '),
+      }),
+    }).catch(function(err) {
+      console.warn('Feedback submission failed (non-blocking):', err);
+    });
+  }
+
+  let _pendingFeedback = null; // { userQuestion, content, btns, downBtn, thanksEl }
+
+  function openFeedbackModal(userQuestion, content, feedbackBtns, downBtn, thanksEl) {
+    _pendingFeedback = { userQuestion, content, feedbackBtns, downBtn, thanksEl };
+    document.getElementById('feedback-issue-type').value = '';
+    document.getElementById('feedback-comment').value = '';
+    document.getElementById('feedback-modal-overlay').classList.add('open');
+  }
+
+  function closeFeedbackModal() {
+    document.getElementById('feedback-modal-overlay').classList.remove('open');
+    _pendingFeedback = null;
+  }
+
+  function submitFeedbackModal() {
+    if (!_pendingFeedback) { closeFeedbackModal(); return; }
+    const issueTypeSelect = document.getElementById('feedback-issue-type');
+    const issueType = issueTypeSelect.value; // e.g. "wrong_numbers", or "" if unselected
+    const comment = document.getElementById('feedback-comment').value.trim();
+    const { userQuestion, content, feedbackBtns, downBtn, thanksEl } = _pendingFeedback;
+
+    sendFeedback({ userQuestion, content, rating: 'down', issueType, comment });
+
+    feedbackBtns.forEach(function(b) { b.disabled = true; });
+    downBtn.classList.add('selected', 'down');
+    if (thanksEl) thanksEl.hidden = false;
+    closeFeedbackModal();
+  }
+
+  function appendErrorBubble(errorText, retryContext) {
+    const msgs = document.getElementById('messages');
+    const now  = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const id   = 'err-' + Date.now();
+    const div  = document.createElement('div');
+    div.className = 'msg assistant';
+    div.dataset.errorId = id;
+    div.dataset.retryMsg = retryContext.message || '';
+    div.dataset.retryHistoryLen = retryContext.historyLen || 0;
+    div.innerHTML = `
+      <div class="msg-avatar"><img src="https://raw.githubusercontent.com/tejaswinijandhyala-ui/DIUD/main/logo.png" alt="DIUD" style="width:100%;height:100%;object-fit:contain;border-radius:8px;"></div>
+      <div class="msg-body">
+        <div class="msg-error-wrap">
+          <div class="msg-error-bubble">⚠️ ${escapeHtml(errorText)}</div>
+          <button class="msg-retry-btn" id="retrybtn-${id}" onclick="retryError('${id}')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+              <path d="M23 4v6h-6"/><path d="M1 20v-6h6"/>
+              <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+            </svg>
+            Retry
+          </button>
+        </div>
+        <div class="msg-time">${now}</div>
+      </div>`;
+    msgs.appendChild(div);
+    msgs.scrollTop = msgs.scrollHeight;
+    return id;
+  }
+
+  function escapeHtml(s) {
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  /* ======================================================================
+     TYPING INDICATOR
+     ====================================================================== */
+  function addTyping() {
+    const id = 'typing-' + Date.now();
+    const msgs = document.getElementById('messages');
+    const div = document.createElement('div');
+    div.id = id; div.className = 'msg assistant';
+    div.innerHTML = `
+      <div class="msg-avatar"><img src="https://raw.githubusercontent.com/tejaswinijandhyala-ui/DIUD/main/logo.png" alt="DIUD" style="width:100%;height:100%;object-fit:contain;border-radius:8px;"></div>
+      <div class="msg-body">
+        <div class="msg-bubble">
+          <div class="typing-indicator">
+            <div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>
+          </div>
+        </div>
+      </div>`;
+    msgs.appendChild(div);
+    msgs.scrollTop = msgs.scrollHeight;
+    return id;
+  }
+  function removeTyping(id) { const el = document.getElementById(id); if (el) el.remove(); }
+
+  /* ======================================================================
+     BUSY STATE
+     ====================================================================== */
+  function setBusy(state) {
+    busy = state;
+    document.getElementById('send-btn').disabled   = state;
+    document.getElementById('chat-input').disabled = state;
+  }
+
+  /* ======================================================================
+     EXPORT PANEL OPEN / CLOSE
+     ====================================================================== */
+const _EXPORT_FORMAT_LABELS = { pdf: 'PDF', pptx: 'PowerPoint', csv: 'CSV', xlsx: 'Excel' };
+
+function openExportPanel(preselectedFormat) {
+    const wasAlreadyOpen = panelOpen;
+    panelOpen = true;
+    document.getElementById('export-panel').classList.add('open');
+    document.getElementById('body-wrap').classList.add('panel-open');
+    previewContent = null;
+    
+    // Set format BEFORE resetting state so the change listener doesn't fight it
+    if (preselectedFormat) {
+        const formatEl = document.getElementById('ep-format');
+        const switchedFormat = wasAlreadyOpen && formatEl.value !== preselectedFormat;
+        formatEl.value = preselectedFormat;
+
+        if (switchedFormat) {
+            showToast(`Switched export format to ${_EXPORT_FORMAT_LABELS[preselectedFormat] || preselectedFormat}`, '');
+        }
+        
+        document.getElementById('ep-detail-group').style.display = 
+            (preselectedFormat === 'csv' || preselectedFormat === 'xlsx') ? 'none' : '';
+    }
+    
+    showPanelState('empty');
+    hideFooter();
+    document.getElementById('ep-dl-pdf').style.display   = 'none';
+    document.getElementById('ep-dl-pptx').style.display  = 'none';
+    document.getElementById('ep-dl-csv').style.display   = 'none';
+    document.getElementById('ep-dl-xlsx').style.display  = 'none';
+    document.getElementById('ep-progress-fill').style.width = '0%';
+    document.getElementById('ep-steps').innerHTML = '';
+}
+
+function closeExportPanel() {
+    panelOpen = false;
+    document.getElementById('export-panel').classList.remove('open');
+    document.getElementById('body-wrap').classList.remove('panel-open');
+  }
+
+  function showPanelState(state) {
+    document.getElementById('ep-empty').style.display   = state === 'empty'   ? 'flex' : 'none';
+    document.getElementById('ep-loading').classList.toggle('visible', state === 'loading');
+    document.getElementById('ep-preview').classList.toggle('visible', state === 'preview');
+    document.getElementById('ep-progress-wrap').classList.toggle('visible', state === 'loading');
+  }
+
+  function hideFooter() { document.getElementById('ep-footer').classList.add('hidden'); }
+  function showFooter() { document.getElementById('ep-footer').classList.remove('hidden'); }
+
+  /* ======================================================================
+     GENERATE PREVIEW
+     ====================================================================== */
+async function generatePreview() {
+  if (exportBusy) return;
+  if (history.length === 0) { showToast('Start a conversation first before exporting.', 'error'); return; }
+  const title  = document.getElementById('ep-title').value.trim() || 'Pipeline Intelligence Report';
+  const format = document.getElementById('ep-format').value;
+  // NEW BACKEND: no detail_level parameter — /export/preview always
+  // generates an AI summary for pdf/pptx (the old "verbatim, entire
+  // conversation" mode isn't implemented on the backend yet). The
+  // dropdown stays in the UI but its value is currently ignored.
+
+  exportBusy = true;
+  document.getElementById('ep-generate-btn').disabled = true;
+  hideFooter();
+  showPanelState('loading');
+  const steps = (format === 'csv' || format === 'xlsx')
+    ? ['Checking for a stored dataset…']
+    : ['Reading conversation context…', 'Structuring document sections…', 'Formatting content…'];
+  const stepsEl = document.getElementById('ep-steps');
+  stepsEl.innerHTML = '';
+  setProgress(5, steps[0]);
+  for (let i = 0; i < steps.length; i++) {
+    await sleep(i === 0 ? 200 : 500);
+    const step = document.createElement('div');
+    step.className = 'ep-loading-step';
+    step.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>${steps[i]}`;
+    stepsEl.appendChild(step);
+    setProgress(15 + i * 25, steps[Math.min(i + 1, steps.length - 1)]);
+  }
+
+  try {
+    setProgress(80, (format === 'csv' || format === 'xlsx') ? 'Confirming dataset…' : 'AI generating document…');
+    const res = await fetch('/export/preview', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        conversation_id: SESSION_ID,
+        title,
+        export_type: format,
+      }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || `HTTP ${res.status}`);
+    }
+    const data = await res.json();
+    if (data.total_rows > 0) datasetRows = data.total_rows;
+    setProgress(100, 'Done!');
+    await sleep(300);
+
+    if (format === 'csv' || format === 'xlsx') {
+      // No AI content for raw-data formats — the preview is just a
+      // confirmation that real data is available to download.
+      const isXlsx = format === 'xlsx';
+      document.getElementById('ep-preview-content').innerHTML = `
+        <div style="display:flex;flex-direction:column;gap:12px;padding:4px 0;">
+          <div style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:#E8F5E9;border:1px solid #C8E6C9;border-radius:8px;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#2E7D32" stroke-width="2.5" style="width:20px;height:20px;flex-shrink:0;"><polyline points="20 6 9 17 4 12"/></svg>
+            <span style="color:#1B5E20;font-weight:600;font-size:14px;">${data.total_rows.toLocaleString()} rows ready to export</span>
+          </div>
+          <p style="color:#555;font-size:13px;line-height:1.6;margin:0;">${isXlsx
+            ? 'The Excel file will be formatted — bold header row, currency-formatted amount columns, auto-sized columns.'
+            : 'The CSV will contain the raw data with the original column headers — no AI summary added.'}</p>
+        </div>`;
+      document.getElementById('ep-preview-meta-text').textContent =
+        `${data.total_rows.toLocaleString()} rows · ${isXlsx ? 'Formatted spreadsheet' : 'Raw data'} · No AI summary`;
+      previewContent = null;  // csv/xlsx download re-reads the stored dataset, doesn't need previewed content
+      document.getElementById('ep-dl-pdf').style.display  = 'none';
+      document.getElementById('ep-dl-pptx').style.display = 'none';
+      const csvBtn = document.getElementById('ep-dl-csv');
+      const xlsxBtn = document.getElementById('ep-dl-xlsx');
+      if (csvBtn) csvBtn.style.display = isXlsx ? 'none' : 'flex';
+      if (xlsxBtn) xlsxBtn.style.display = isXlsx ? 'flex' : 'none';
+    } else {
+      previewContent = data.content;
+      document.getElementById('ep-preview-content').innerHTML = marked.parse(previewContent);
+      const rowNote = data.total_rows > 0 ? ` · ${data.total_rows.toLocaleString()} rows` : '';
+      document.getElementById('ep-preview-meta-text').textContent =
+        `Preview ready${rowNote} · Generated ${data.generated_at}`;
+      document.getElementById('ep-dl-pdf').style.display  = format === 'pdf'  ? 'flex' : 'none';
+      document.getElementById('ep-dl-pptx').style.display = format === 'pptx' ? 'flex' : 'none';
+      const csvBtn2 = document.getElementById('ep-dl-csv');
+      const xlsxBtn2 = document.getElementById('ep-dl-xlsx');
+      if (csvBtn2) csvBtn2.style.display = 'none';
+      if (xlsxBtn2) xlsxBtn2.style.display = 'none';
+    }
+
+    showPanelState('preview');
+    showFooter();
+
+  } catch(err) {
+    showPanelState('empty');
+    showToast('Preview generation failed: ' + err.message, 'error');
+    appendBubble('assistant', `⚠️ **Export preview failed:** ${err.message}`);
+  } finally {
+    exportBusy = false;
+    document.getElementById('ep-generate-btn').disabled = false;
+  }
+}
+
+  document.getElementById('ep-format').addEventListener('change', function() {
+    const isRawData = this.value === 'csv' || this.value === 'xlsx';
+    document.getElementById('ep-detail-group').style.display = isRawData ? 'none' : '';
+    showPanelState('empty');
+    hideFooter();
+    previewContent = null;
+    document.getElementById('ep-dl-pdf').style.display  = 'none';
+    document.getElementById('ep-dl-pptx').style.display = 'none';
+    const csvBtn = document.getElementById('ep-dl-csv');
+    if (csvBtn) csvBtn.style.display = 'none';
+    document.getElementById('ep-progress-fill').style.width = '0%';
+    document.getElementById('ep-steps').innerHTML = '';
+});
+
+  function setProgress(pct, label) {
+    document.getElementById('ep-progress-fill').style.width = pct + '%';
+    document.getElementById('ep-progress-label').textContent = label;
+  }
+
+  /* ======================================================================
+     DOWNLOAD
+     ====================================================================== */
+  async function downloadDoc(format) {
+    if (!previewContent) { showToast('Generate a preview first.', 'error'); return; }
+    const title = document.getElementById('ep-title').value.trim() || 'Pipeline Intelligence Report';
+    const dlBtn = document.getElementById(format === 'pdf' ? 'ep-dl-pdf' : 'ep-dl-pptx');
+    dlBtn.disabled = true;
+    const orig = dlBtn.innerHTML;
+    dlBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:15px;height:15px;"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>Building…`;
+    showToast(`Building ${format.toUpperCase()}…`, '');
+    try {
+      const res = await fetch('/export/download', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ format, content: previewContent, title, conversation_id: SESSION_ID }),
+      });
+      if (!res.ok) throw new Error((await res.json().catch(()=>({}))).detail || `HTTP ${res.status}`);
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(await res.blob());
+      a.download = `${title.replace(/\s+/g,'_')}.${format}`;
+      a.click(); URL.revokeObjectURL(a.href);
+      showToast(`✅ ${format.toUpperCase()} downloaded!`, 'success');
+    } catch(err) {
+      showToast('Download failed: ' + err.message, 'error');
+    } finally {
+      dlBtn.innerHTML = orig; dlBtn.disabled = false;
+    }
+  }
+
+  async function downloadCSV() {
+    const title  = document.getElementById('ep-title').value.trim() || 'deals-export';
+    const csvBtn = document.getElementById('ep-dl-csv');
+    const orig   = csvBtn ? csvBtn.innerHTML : '';
+    if (csvBtn) csvBtn.disabled = true;
+    showToast(`Exporting ${datasetRows > 0 ? datasetRows.toLocaleString() + ' rows' : 'data'} as CSV…`, '');
+    try {
+      const res = await fetch('/export/download', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ format: 'csv', title, conversation_id: SESSION_ID }),
+      });
+      if (!res.ok) throw new Error((await res.json().catch(()=>({}))).detail || `HTTP ${res.status}`);
+      const totalRows = res.headers.get('X-Total-Rows') || datasetRows;
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(await res.blob());
+      a.download = `${title.replace(/\s+/g,'_')}.csv`;
+      a.click(); URL.revokeObjectURL(a.href);
+      showToast(`✅ CSV exported — all ${Number(totalRows).toLocaleString()} rows!`, 'success');
+    } catch(err) {
+      showToast('CSV export failed: ' + err.message, 'error');
+    } finally {
+      if (csvBtn) { csvBtn.innerHTML = orig; csvBtn.disabled = false; }
+    }
+  }
+
+  async function downloadXLSX() {
+    const title   = document.getElementById('ep-title').value.trim() || 'deals-export';
+    const xlsxBtn = document.getElementById('ep-dl-xlsx');
+    const orig    = xlsxBtn ? xlsxBtn.innerHTML : '';
+    if (xlsxBtn) xlsxBtn.disabled = true;
+    showToast(`Exporting ${datasetRows > 0 ? datasetRows.toLocaleString() + ' rows' : 'data'} as Excel…`, '');
+    try {
+      const res = await fetch('/export/download', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ format: 'xlsx', title, conversation_id: SESSION_ID }),
+      });
+      if (!res.ok) throw new Error((await res.json().catch(()=>({}))).detail || `HTTP ${res.status}`);
+      const totalRows = res.headers.get('X-Total-Rows') || datasetRows;
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(await res.blob());
+      a.download = `${title.replace(/\s+/g,'_')}.xlsx`;
+      a.click(); URL.revokeObjectURL(a.href);
+      showToast(`✅ Excel exported — all ${Number(totalRows).toLocaleString()} rows!`, 'success');
+    } catch(err) {
+      showToast('Excel export failed: ' + err.message, 'error');
+    } finally {
+      if (xlsxBtn) { xlsxBtn.innerHTML = orig; xlsxBtn.disabled = false; }
+    }
+  }
+
+  /* ======================================================================
+     NEW CHAT
+     ====================================================================== */
+  function newChat() {
+    history = []; previewContent = null; datasetRows = 0;
+    const msgs = document.getElementById('messages');
+    msgs.innerHTML = `
+      <div id="welcome">
+        <div class="welcome-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+          </svg>
+        </div>
+        <h2>Hey, I'm DIUD 👋</h2>
+        <p>I'm your Data Intelligence Agent here to help you analyse live ClickHouse data.<br>
+           Ask me about pipeline deals, AE performance, win/loss analysis, BANT rates, regional breakdowns, and more.<br><br>
+           <em style="color:var(--txt-dim);font-size:12px;">💡 Tip: Ask "give me those deals as CSV" or "export as PDF" to download the exact data.</em></p>
+      </div>`;
+    updateDatasetBadge();
+    if (panelOpen) closeExportPanel();
+    input.value = '';
+    input.style.height = 'auto';
+}
+
+  /* ======================================================================
+     TOAST
+     ====================================================================== */
+  let _toastTimer;
+  function showToast(msg, type) {
+    type = type || '';
+    const t = document.getElementById('toast');
+    t.textContent = msg; t.className = 'show ' + type;
+    clearTimeout(_toastTimer);
+    _toastTimer = setTimeout(function() { t.className = ''; }, 4000);
+  }
+
+  /* ======================================================================
+     CONNECTION HEALTH CHECK
+     ====================================================================== */
+  async function checkConn() {
+    const badge = document.getElementById('conn-badge');
+    const label = document.getElementById('conn-label');
+    badge.className = 'conn-badge checking';
+    label.textContent = 'Checking…';
+    try {
+      const res  = await fetch('/debug/db');
+      const data = await res.json();
+      if (data.status === 'OK') {
+        badge.className = 'conn-badge ok'; label.textContent = 'DB Connected ✓';
+      } else {
+        badge.className = 'conn-badge fail'; label.textContent = 'DB Unreachable';
+      }
+    } catch {
+      badge.className = 'conn-badge fail'; label.textContent = 'DB Unreachable';
+    }
+  }
+
+  /* ======================================================================
+     ADMIN PANEL — a real UI for the debug reports, instead of raw API calls
+     ====================================================================== */
+  let _adminToken = null; // held in memory only for this tab session, never persisted
+
+  function openAdminPanel() {
+    document.getElementById('admin-panel').classList.add('open');
+    if (_adminToken) { renderAdminTab('metrics'); }
+  }
+  function closeAdminPanel() {
+    document.getElementById('admin-panel').classList.remove('open');
+  }
+
+  async function unlockAdminPanel() {
+    const tokenInput = document.getElementById('admin-token-input');
+    const errEl = document.getElementById('admin-token-error');
+    const token = tokenInput.value.trim();
+    if (!token) { errEl.textContent = 'Enter a token.'; return; }
+
+    try {
+      const res = await fetch('/debug/metrics', { headers: { 'X-Admin-Token': token } });
+      if (res.status === 401) { errEl.textContent = 'Invalid token.'; return; }
+      if (res.status === 503) { errEl.textContent = 'Admin surface not configured on the server (DEV_ADMIN_TOKEN unset).'; return; }
+      if (!res.ok) { errEl.textContent = 'Unexpected error checking token.'; return; }
+    } catch (e) {
+      errEl.textContent = 'Could not reach the server.'; return;
+    }
+
+    _adminToken = token;
+    errEl.textContent = '';
+    document.getElementById('admin-token-gate').style.display = 'none';
+    document.getElementById('admin-tabs').style.display = 'flex';
+    renderAdminTab('metrics');
+  }
+
+  function switchAdminTab(tab) {
+    document.querySelectorAll('.admin-tab').forEach(function(b) {
+      b.classList.toggle('active', b.dataset.tab === tab);
+    });
+    renderAdminTab(tab);
+  }
+
+  async function adminFetch(path, opts) {
+    opts = opts || {};
+    opts.headers = Object.assign({ 'X-Admin-Token': _adminToken }, opts.headers || {});
+    const res = await fetch(path, opts);
+    if (res.status === 401) {
+      _adminToken = null;
+      document.getElementById('admin-token-gate').style.display = 'flex';
+      document.getElementById('admin-tabs').style.display = 'none';
+      throw new Error('Token expired or invalid — please unlock again.');
+    }
+    return res.json();
+  }
+
+  async function renderAdminTab(tab) {
+    const body = document.getElementById('admin-body');
+    body.innerHTML = '<div class="admin-loading">Loading…</div>';
+    try {
+      if (tab === 'metrics') await renderAdminMetrics(body);
+      else if (tab === 'feedback') await renderAdminFeedback(body);
+      else if (tab === 'alerts') await renderAdminAlerts(body);
+      else if (tab === 'proposals') await renderAdminProposals(body);
+    } catch (e) {
+      body.innerHTML = `<div class="admin-empty">${escapeHtml(e.message)}</div>`;
+    }
+  }
+
+  async function renderAdminMetrics(body) {
+    const d = await adminFetch('/debug/metrics');
+    if (!d.total_events) { body.innerHTML = '<div class="admin-empty">No rule-check events logged yet.</div>'; return; }
+    let html = `<div class="admin-stat-row">
+      <div class="admin-stat"><div class="admin-stat-num">${d.success_rate_pct}%</div><div class="admin-stat-label">Success rate</div></div>
+      <div class="admin-stat"><div class="admin-stat-num">${d.total_events}</div><div class="admin-stat-label">Total checks</div></div>
+      <div class="admin-stat"><div class="admin-stat-num">${d.with_violations}</div><div class="admin-stat-label">Violations</div></div>
+    </div>`;
+    html += '<div class="admin-card-title">Failures by rule</div>';
+    const ruleEntries = Object.entries(d.by_rule_id || {});
+    if (!ruleEntries.length) html += '<div class="admin-empty">None yet.</div>';
+    ruleEntries.forEach(function([id, count]) {
+      html += `<div class="admin-card sev-none"><div class="admin-card-detail"><b>${escapeHtml(id)}</b> — ${count} time(s)</div></div>`;
+    });
+    body.innerHTML = html;
+  }
+
+  async function renderAdminFeedback(body) {
+    const d = await adminFetch('/debug/feedback');
+    if (!d.total_feedback) { body.innerHTML = '<div class="admin-empty">No feedback submitted yet.</div>'; return; }
+    let html = `<div class="admin-stat-row">
+      <div class="admin-stat"><div class="admin-stat-num">${d.positive_rate_pct}%</div><div class="admin-stat-label">Positive rate</div></div>
+      <div class="admin-stat"><div class="admin-stat-num">${d.thumbs_up}</div><div class="admin-stat-label">👍</div></div>
+      <div class="admin-stat"><div class="admin-stat-num">${d.thumbs_down}</div><div class="admin-stat-label">👎</div></div>
+    </div>`;
+    html += '<div class="admin-card-title">Recent comments</div>';
+    if (!d.recent_comments.length) html += '<div class="admin-empty">None yet.</div>';
+    d.recent_comments.forEach(function(c) {
+      html += `<div class="admin-card sev-none">
+        <div class="admin-card-meta">${escapeHtml(c.pattern)} · ${escapeHtml(c.issue_type || 'no category')}</div>
+        <div class="admin-card-detail">${escapeHtml(c.comment || '(no comment)')}</div>
+      </div>`;
+    });
+    body.innerHTML = html;
+  }
+
+  async function renderAdminAlerts(body) {
+    const d = await adminFetch('/debug/alerts');
+    if (!d.flag_count) { body.innerHTML = '<div class="admin-empty">No flagged issues right now.</div>'; return; }
+    let html = '';
+    d.flags.forEach(function(f) {
+      html += `<div class="admin-card sev-${f.severity}">
+        <div class="admin-card-meta">${f.severity.toUpperCase()} · ${escapeHtml(f.source)}</div>
+        <div class="admin-card-title">${escapeHtml(f.subject)}</div>
+        <div class="admin-card-detail">${escapeHtml(f.detail)}</div>
+        <div class="admin-card-detail" style="color:var(--txt-dim);font-style:italic;">${escapeHtml(f.suggested_action)}</div>
+      </div>`;
+    });
+    body.innerHTML = html;
+  }
+
+  async function renderAdminProposals(body) {
+    // NEW ARCHITECTURE: no persisted proposal queue -- there's nothing
+    // to list until you click "Draft" below, since nothing is stored
+    // between requests. Each draft is a fresh, stateless suggestion.
+    let html = `<p style="font-size:11.5px;color:var(--txt-dim);margin-bottom:10px;line-height:1.5;">
+      Suggestions here are advisory only. To apply one, edit
+      <code>rules/rules_book.py</code> yourself and open a pull request —
+      that PR's review is the actual approval step, not this panel.
+    </p>`;
+    html += '<button class="admin-btn admin-btn-secondary" onclick="draftAdminProposals()">Draft suggestions for current alerts</button>';
+    html += '<div id="admin-proposals-list"><div class="admin-empty">Click above to draft suggestions for current alerts.</div></div>';
+    body.innerHTML = html;
+  }
+
+  async function draftAdminProposals() {
+    const listEl = document.getElementById('admin-proposals-list');
+    listEl.innerHTML = '<div class="admin-loading">Drafting…</div>';
+    try {
+      const d = await adminFetch('/debug/proposals/draft', { method: 'POST' });
+      if (!d.proposals || !d.proposals.length) {
+        listEl.innerHTML = '<div class="admin-empty">No current alerts to draft suggestions for.</div>';
+        return;
+      }
+      let html = '';
+      d.proposals.forEach(function(p) {
+        html += `<div class="admin-card sev-${p.flag.severity || 'none'}">
+          <div class="admin-card-meta">${escapeHtml(p.flag.subject)}</div>
+          <div class="admin-card-detail"><b>Diagnosis:</b> ${escapeHtml(p.diagnosis)}</div>
+          ${p.has_safe_fix
+            ? `<div class="admin-card-detail"><b>Suggested addition for rules_book.py:</b> ${escapeHtml(p.proposed_addition)}</div>`
+            : '<div class="admin-card-detail" style="color:var(--txt-dim);">No safe fix proposed.</div>'}
+        </div>`;
+      });
+      listEl.innerHTML = html;
+    } catch (e) {
+      listEl.innerHTML = `<div class="admin-empty">${escapeHtml(e.message)}</div>`;
+    }
+  }
+
+  checkConn();
+</script>
+
+</body>
+</html>
